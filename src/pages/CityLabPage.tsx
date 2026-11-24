@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import {
   blankPolicy,
@@ -12,6 +12,7 @@ import styles from './Page.module.css';
 import { CityMap } from '../contexts/city-network/presentation/public-api';
 import { useJourney } from '../app/model';
 import { Playback } from '../shared/ui/Playback';
+import { Journey } from '../contexts/temporal-simulation/presentation/public-api';
 
 function download(data: unknown) {
   const url = URL.createObjectURL(
@@ -25,6 +26,7 @@ function download(data: unknown) {
 }
 
 export function CityLabPage() {
+  const [residentId, setResidentId] = useState('');
   const { disrupted } = useJourney();
   const incident = useScenario((state) => state.incident);
   const policy = useScenario((state) => state.policy);
@@ -34,6 +36,7 @@ export function CityLabPage() {
   const setBudget = useScenario((state) => state.setBudget);
   const setObjective = useScenario((state) => state.setObjective);
   const result = useMemo(() => population(incident, policy), [incident, policy]);
+  const selectedResident = result.rows.find((row) => row.id === residentId);
   return (
     <>
       <section className={styles.intro}>
@@ -247,7 +250,7 @@ export function CityLabPage() {
             <tbody>
               {result.rows.map((row) => (
                 <tr key={row.id}>
-                  <th>{row.name}</th>
+                  <th><button className={styles.tableButton} type="button" onClick={() => setResidentId(row.id)} aria-pressed={residentId === row.id}>{row.name}</button></th>
                   <td>{row.base.completed}</td>
                   <td>{row.disrupted.completed}</td>
                   <td>{row.adapt?.completed ?? 0}</td>
@@ -258,6 +261,7 @@ export function CityLabPage() {
           </table>
         </div>
       </section>
+      {selectedResident && <section className={styles.card}><span className={styles.kicker}>INDIVIDUAL OUTCOME</span><h2>{selectedResident.name} · {selectedResident.group}</h2><p>Before the disruption: {selectedResident.base.completed} visits. Aftershock: {selectedResident.disrupted.completed}. With the selected policy: {selectedResident.improved?.completed ?? 0}.</p>{selectedResident.improved ? <Journey result={selectedResident.improved} /> : <p>No feasible recovery is available for this resident.</p>}</section>}
     </>
   );
 }
