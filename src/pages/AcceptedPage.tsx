@@ -86,6 +86,7 @@ export function AcceptedPage() {
               Undo acceptance
             </button>
           </div>
+          <p><Link to="/my-day">Edit my day</Link> · <Link to="/resync">Compare recovery options</Link></p>
         </section>
       ) : (
         <section className={styles.card}>

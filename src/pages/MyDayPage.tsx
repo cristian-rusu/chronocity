@@ -78,16 +78,6 @@ export function MyDayPage() {
           <h2>Daily plan</h2>
           <div className={styles.fields}>
             <label>
-              Citizen profile
-              <select value={profile} onChange={(event) => selectProfile(event.target.value)}>
-                {profiles.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} · {item.role}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
               Starting location
               <select
                 value={plan.startPlace}
@@ -182,6 +172,7 @@ export function MyDayPage() {
             aria-modal="true"
             aria-labelledby="editor-title"
             className={styles.editor}
+            onKeyDown={(event) => { if (event.key === 'Escape') setDraft(null); }}
           >
             <form onSubmit={submit} className={styles.fields}>
               <h2 id="editor-title">
@@ -190,6 +181,7 @@ export function MyDayPage() {
               <label>
                 Activity name
                 <input
+                  autoFocus
                   required
                   maxLength={80}
                   value={draft.title}

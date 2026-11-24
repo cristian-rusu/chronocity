@@ -4,6 +4,7 @@ import { useJourney } from '../app/model';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import { Journey, Timeline } from '../contexts/temporal-simulation/presentation/public-api';
 import { CityMap } from '../contexts/city-network/presentation/public-api';
+import { Playback } from '../shared/ui/Playback';
 import { minutesToTime } from '../contexts/citizen-planning/public-api';
 import { city } from '../contexts/city-network/public-api';
 import styles from './Page.module.css';
@@ -161,7 +162,8 @@ export function ResyncPage() {
               ]}
             />
           </section>
-          <CityMap result={chosen} incident={incident} />
+      <CityMap result={chosen} incident={incident} />
+      <Playback start={plan.startTime} end={Math.max(base.finish, disrupted.finish, chosen.finish)} />
         </>
       ) : (
         <section className={styles.card}>

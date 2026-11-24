@@ -28,8 +28,8 @@ export function App() {
       <header className={styles.header}>
         <NavLink to="/" className={styles.brand}>
           <Clock3 aria-hidden="true" />{' '}
-          <span>
-            chrono<strong>city.</strong>
+          <span className={styles.brandText}>
+            chrono<strong>city.</strong><small>URBAN TIME INTELLIGENCE</small>
           </span>
         </NavLink>
         <nav aria-label="Main navigation" className={styles.nav}>
@@ -62,9 +62,7 @@ export function App() {
         )}
         <Outlet />
       </main>
-      <footer className={styles.footer}>
-        ChronoCity · Synthetic data · Deterministic calculations · Local storage
-      </footer>
+      <footer className={styles.footer}><span>ChronoCity / Achrona · Hack The Future 2026</span><span>Synthetic data · deterministic calculations · local storage</span></footer>
     </>
   );
 }

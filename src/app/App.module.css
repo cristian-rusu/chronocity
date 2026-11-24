@@ -31,6 +31,8 @@
 .brand strong {
   color: var(--accent);
 }
+.brandText{display:grid;line-height:1.05;letter-spacing:-0.04em}
+.brandText small{font-size:0.48rem;letter-spacing:0.18em;font-weight:800;color:var(--muted);margin-top:0.3rem}
 .brand svg {
   background: var(--accent);
   color: white;
@@ -78,7 +80,8 @@
 }
 .footer {
   padding: var(--space-6);
-  text-align: center;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  max-width:91rem;margin:auto;
   color: var(--muted);
   border-block-start: 0.0625rem solid var(--border);
 }
