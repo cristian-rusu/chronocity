@@ -1,71 +1,36 @@
-import { useEffect, useState } from 'react';
-import styles from './Playback.module.css';
+import { useEffect } from 'react';
+import { OriginalIcon } from './OriginalIcon';
+import { usePlaybackClock } from './playbackClock';
 
-const clockLabel = (minutes: number) =>
-  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+const label = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 
-export function Playback({ start, end }: { start: number; end: number }) {
-  const [time, setTime] = useState(start);
-  const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(5);
+export function Playback({ start: _start, end: _end }: { start: number; end: number }) {
+  const time = usePlaybackClock((state) => state.time);
+  const playing = usePlaybackClock((state) => state.playing);
+  const speed = usePlaybackClock((state) => state.speed);
+  const setTime = usePlaybackClock((state) => state.setTime);
+  const setPlaying = usePlaybackClock((state) => state.setPlaying);
+  const setSpeed = usePlaybackClock((state) => state.setSpeed);
   useEffect(() => {
     if (!playing) return;
-    const timer = window.setInterval(
-      () =>
-        setTime((current) => {
-          if (current + speed >= end) {
-            setPlaying(false);
-            return end;
-          }
-          return current + speed;
-        }),
-      500,
-    );
+    const timer = window.setInterval(() => {
+      const next = usePlaybackClock.getState().time + usePlaybackClock.getState().speed;
+      if (next >= 1260) {
+        setTime(1260);
+        setPlaying(false);
+      } else setTime(next);
+    }, 500);
     return () => window.clearInterval(timer);
-  }, [playing, speed, end]);
-  return (
-    <div className={styles.playback}>
-      <button
-        type="button"
-        onClick={() => {
-          if (time >= end) setTime(start);
-          setPlaying(!playing);
-        }}
-        aria-label={playing ? 'Pause time playback' : 'Start time playback'}
-      >
-        {playing ? 'Pause' : 'Play'}
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          setPlaying(false);
-          setTime(start);
-        }}
-      >
-        Reset
-      </button>
-      <label>
-        Simulation time{' '}
-        <input
-          type="range"
-          min={start}
-          max={end}
-          value={time}
-          onChange={(event) => {
-            setPlaying(false);
-            setTime(Number(event.target.value));
-          }}
-        />
-      </label>
-      <output>{clockLabel(time)}</output>
-      <label>
-        Playback speed{' '}
-        <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-          <option value="1">1 minute</option>
-          <option value="5">5 minutes</option>
-          <option value="15">15 minutes</option>
-        </select>
-      </label>
+  }, [playing, setPlaying, setTime]);
+  return <div className="playback">
+    <button className="play-button" type="button" aria-label={playing ? 'Pause time playback' : 'Start time playback'} onClick={() => {
+      if (playing) setPlaying(false);
+      else { if (time >= 1260) setTime(420); setPlaying(true); }
+    }}>{playing ? <OriginalIcon name="pause"/> : <OriginalIcon name="play"/>}</button>
+    <div className="clock-track"><div><label htmlFor="clock">Explore time</label><output id="clock-label" htmlFor="clock">{label(time)}</output></div>
+      <input type="range" id="clock" min="420" max="1260" step="5" value={time} onChange={(event) => {setPlaying(false);setTime(Number(event.target.value));}}/>
+      <div className="clock-ticks"><span>07:00</span><span>11:40</span><span>16:20</span><span>21:00</span></div>
     </div>
-  );
+    <label className="speed-label">Speed<select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}><option value="1">1 min/tick</option><option value="5">5 min/tick</option><option value="15">15 min/tick</option></select></label>
+  </div>;
 }

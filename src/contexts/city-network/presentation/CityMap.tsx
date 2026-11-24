@@ -1,11 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { city as defaultCity } from '../infrastructure/dataset';
 import type { City, Place } from '../public-contracts';
 import type { Result } from '../../temporal-simulation/public-contracts';
 import type { Incident } from '../../aftershock/public-contracts';
 import { calm, edgeTime } from '../../aftershock/public-api';
 import { usePlaybackClock } from '../../../shared/ui/playbackClock';
-import styles from './CityMap.module.css';
 
 type Layer = 'routes' | 'access' | 'people';
 type Selection = { kind: 'place' | 'edge'; id: string } | null;
@@ -82,18 +81,18 @@ function TransportLayer({
   select: (value: Selection) => void;
   hero: boolean;
 }) {
-  const used = new Set(result.steps.flatMap((step) => step.path?.edges ?? []));
+  const used = new Set(hero ? ['west-central','central-hall','hall-child','work-park','park-child','child-pharmacy'] : result.steps.flatMap((step) => step.path?.edges ?? []));
   return (
     <g>
       {city.edges.map((edge) => {
         const a = place(city, edge.a),
           b = place(city, edge.b);
-        const affected = incident.delay > 0 && edge.id === incident.edge;
+        const affected = hero ? edge.id === 'central-hall' : incident.delay > 0 && edge.id === incident.edge;
         const active = used.has(edge.id);
         return (
           <g
             key={edge.id}
-            className={hero ? undefined : styles.target}
+            className={hero ? undefined : 'map-target'}
             role={hero ? undefined : 'button'}
             tabIndex={hero ? undefined : 0}
             aria-label={`${a.name} to ${b.name}, ${edge.mode}, ${edge.minutes} minutes${affected ? `, ${incident.delay} minute delay` : ''}`}
@@ -142,7 +141,7 @@ function TransportLayer({
               <g transform={`translate(${(a.x + b.x) / 2},${(a.y + b.y) / 2})`}>
                 <rect x="-32" y="-13" width="64" height="26" rx="13" fill="#d94b39" />
                 <text textAnchor="middle" y="4" fill="white" fontSize="12" fontWeight="700">
-                  +{incident.delay}m
+                  +{hero ? 30 : incident.delay}m
                 </text>
               </g>
             )}
@@ -194,7 +193,7 @@ function LocationLayer({
               />
             )}
             <g
-              className={hero ? undefined : styles.target}
+              className={hero ? undefined : 'map-target'}
               role={hero ? undefined : 'button'}
               tabIndex={hero ? undefined : 0}
               aria-label={`${item.name}, ${item.kind}`}
@@ -282,7 +281,7 @@ function CitizenLayer({
   const point = citizenPosition(city, result, clock, incident);
   if (!point && (layer !== 'people' || residents.length === 0)) return null;
   return (
-    <g pointerEvents="none" className={styles.citizen}>
+    <g pointerEvents="none" className={'citizen'}>
       {layer === 'people' &&
         residents.map((resident, index) => {
           const location = citizenPosition(city, resident, clock, incident);
@@ -316,23 +315,23 @@ export function CityMap({
 }) {
   const city = cityData;
   const [selected, setSelected] = useState<Selection>(null);
-  const [layer, setLayer] = useState<Layer>('routes');
+  const [layer, setLayer] = useState<Layer>(cityData === defaultCity ? 'routes' : 'people');
   const selectedEdge =
     selected?.kind === 'edge' ? city.edges.find((edge) => edge.id === selected.id) : undefined;
   const selectedPlace =
     selected?.kind === 'place' ? city.places.find((item) => item.id === selected.id) : undefined;
   return (
     <section
-      className={`${styles.wrapper} ${hero ? styles.hero : ''}`}
+      className={hero ? 'hero-map-container' : 'panel map-panel'}
       aria-label="Achrona city map"
     >
       {!hero && (
-        <div className={styles.heading}>
+        <div className={'panel-heading'}>
           <div>
-            <small>ACHRONA / SYNTHETIC DISTRICT</small>
-            <h2>Your route in the city</h2>
+            <div className="kicker">ACHRONA / SYNTHETIC DISTRICT</div>
+            <h2>{cityData === defaultCity ? 'Your route in the city' : 'City activity'}</h2>
           </div>
-          <div className={styles.layers} aria-label="Map layer">
+          <div className={'segmented'} aria-label="Map layer">
             {(['routes', 'access', 'people'] as const).map((value) => (
               <button
                 key={value}
@@ -346,11 +345,11 @@ export function CityMap({
           </div>
         </div>
       )}
-      <svg
+      <div className="map-wrap"><svg
         viewBox="0 0 930 545"
         role={hero ? 'img' : 'group'}
         aria-label="Illustrated Achrona city with districts, river, services and transport"
-        className={styles.map}
+        className={hero ? 'city-map hero-map' : 'city-map'}
       >
         <defs>
           <pattern id="papergrid" width="35" height="35" patternUnits="userSpaceOnUse">
@@ -386,18 +385,13 @@ export function CityMap({
       </svg>
       {!hero && (
         <>
-          <div className={styles.legend}>
-            <span>
-              <i /> Selected route
-            </span>
-            <span>
-              <i className={styles.red} /> Disruption
-            </span>
-            <span>
-              <i className={styles.purple} /> Added service
-            </span>
+          <div className="map-caption"><i/>{cityData === defaultCity ? 'Selected journey' : 'City network · purple = added shuttle'}<i className="red-dot"/>Disruption
           </div>
-          <div className={styles.inspector} aria-live="polite">
+        </>
+      )}
+      </div>
+      {!hero && (<>
+          <div className={'map-inspector'} aria-live="polite">
             {selectedEdge ? (
               <>
                 <strong>
@@ -410,8 +404,8 @@ export function CityMap({
                     : ''}
                 </span>
                 {onSelectEdge && (
-                  <button type="button" onClick={() => onSelectEdge(selectedEdge.id)}>
-                    Disrupt this connection
+                  <button className="btn small" type="button" onClick={() => onSelectEdge(selectedEdge.id)}>
+                    Disrupt this link
                   </button>
                 )}
               </>
@@ -429,7 +423,7 @@ export function CityMap({
               </>
             ) : (
               <span>
-                Select a location or connection to inspect it. Playback keeps your selection.
+                Click a location or connection to inspect it. Playback does not change your selection.
               </span>
             )}
           </div>
@@ -438,3 +432,4 @@ export function CityMap({
     </section>
   );
 }
+

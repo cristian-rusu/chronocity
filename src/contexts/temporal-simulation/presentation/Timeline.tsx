@@ -1,14 +1,14 @@
-import type { Result } from '../public-contracts';
+﻿import type { Result } from '../public-contracts';
 import { minutesToTime } from '../../citizen-planning/public-contracts';
 import { usePlaybackClock } from '../../../shared/ui/playbackClock';
-import styles from './Timeline.module.css';
+import { city } from '../../city-network/public-api';
 
 function Playhead({ begin, end }: { begin: number; end: number }) {
   const time = usePlaybackClock((state) => state.time);
   if (time < begin || time > end) return null;
   return (
     <i
-      className={styles.playhead}
+      className={'playhead'}
       style={{ left: `${((time - begin) / (end - begin)) * 100}%` }}
       aria-hidden="true"
     />
@@ -26,27 +26,27 @@ export function Timeline({
   const span = end - start;
   const pct = (minutes: number) => Math.max(0, ((minutes - start) / span) * 100);
   return (
-    <div className={styles.timeline}>
-      <div className={styles.axis}>
+    <div className="timeline">
+      <div className={'timeline-axis'}>
         {Array.from({ length: 5 }, (_, index) => (
           <span key={index}>{minutesToTime(Math.round(start + (index * span) / 4))}</span>
         ))}
       </div>
       {rows.map(({ label, result }) => (
-        <div className={styles.row} key={label}>
-          <div className={styles.rowLabel}>
+        <div className={'timeline-row'} key={label}>
+          <div className="timeline-label">
             <strong>{label}</strong>
             <small>
               {result.completed}/{result.steps.length + result.omitted.length} feasible ·{' '}
               {minutesToTime(result.finish)}
             </small>
           </div>
-          <div className={styles.track}>
+          <div className={'timeline-track'}>
             <Playhead begin={start} end={end} />
             {result.steps.map((step) => (
               <div key={step.activity.id}>
                 <span
-                  className={`${styles.segment} ${styles.travel}`}
+                  className={`${'segment'} ${'travel'}`}
                   style={{
                     left: `${pct(step.depart)}%`,
                     width: `${pct(step.arrive) - pct(step.depart)}%`,
@@ -55,7 +55,7 @@ export function Timeline({
                 />
                 {step.wait > 0 && (
                   <span
-                    className={`${styles.segment} ${styles.wait}`}
+                    className={`${'segment'} ${'wait'}`}
                     style={{
                       left: `${pct(step.arrive)}%`,
                       width: `${pct(step.start) - pct(step.arrive)}%`,
@@ -64,34 +64,35 @@ export function Timeline({
                   />
                 )}
                 <span
-                  className={`${styles.segment} ${step.valid ? styles.visit : styles.blocked}`}
+                  className={`segment ${step.valid ? 'visit' : 'blocked'} ${step.projected ? 'projected' : ''}`}
                   style={{
                     left: `${pct(step.start)}%`,
                     width: `${pct(step.finish) - pct(step.start)}%`,
                   }}
                   title={`${step.activity.title} ${minutesToTime(step.start)}–${minutesToTime(step.finish)}`}
                 >
-                  <span>{step.activity.title}</span>
+                  <span>{city.places.find((place) => place.id === step.activity.place)?.name ?? step.activity.place}</span>
                 </span>
               </div>
             ))}
           </div>
         </div>
       ))}
-      <div className={styles.legend}>
+      <div className={'timeline-key'}>
         <span>
-          <i className={styles.travel} /> Travel
+          <i className={'travel'} /> Travel
         </span>
         <span>
-          <i className={styles.wait} /> Waiting
+          <i className={'wait'} /> Waiting
         </span>
         <span>
-          <i className={styles.visit} /> Feasible visit
+          <i className={'visit'} /> Feasible visit
         </span>
         <span>
-          <i className={styles.blocked} /> Conflict
+          <i className={'blocked'} /> Conflict
         </span>
       </div>
     </div>
   );
 }
+

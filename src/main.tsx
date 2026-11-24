@@ -9,7 +9,7 @@ import { ResyncPage } from './pages/ResyncPage';
 import { AcceptedPage } from './pages/AcceptedPage';
 import { CityLabPage } from './pages/CityLabPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import './shared/styles/index.css';
+import '../styles.css';
 
 const root = document.getElementById('root');
 if (root)

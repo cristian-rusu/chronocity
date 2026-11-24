@@ -1,28 +1,13 @@
-import { useState, type FormEvent } from 'react';
+﻿import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { city } from '../contexts/city-network/public-api';
-import { profiles } from '../contexts/citizen-planning/public-api';
-import {
-  minutesToTime,
-  timeToMinutes,
-  type Activity,
-} from '../contexts/citizen-planning/public-api';
+import { profiles, minutesToTime, timeToMinutes, type Activity } from '../contexts/citizen-planning/public-api';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import { useJourney } from '../app/model';
 import { Journey } from '../contexts/temporal-simulation/presentation/public-api';
-import styles from './Page.module.css';
 
-const blank = (start: number): Activity => ({
-  id: crypto.randomUUID(),
-  title: '',
-  place: 'hall',
-  duration: 15,
-  earliest: start,
-  deadline: 1020,
-  deadlineType: 'finish',
-  priority: 'essential',
-  fixedOrder: false,
-});
+const blank = (start: number): Activity => ({ id: crypto.randomUUID(), title: '', place: 'hall', duration: 15, earliest: start, deadline: 1020, deadlineType: 'finish', priority: 'essential', fixedOrder: false });
 
 export function MyDayPage() {
   const { plan, base } = useJourney();
@@ -32,278 +17,24 @@ export function MyDayPage() {
   const saveActivity = useScenario((state) => state.saveActivity);
   const removeActivity = useScenario((state) => state.removeActivity);
   const moveActivity = useScenario((state) => state.moveActivity);
+  const acceptedOrder = useScenario((state) => state.acceptedOrder);
   const [draft, setDraft] = useState<Activity | null>(null);
   const [error, setError] = useState('');
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!draft) return;
-    const message = saveActivity(draft);
-    setError(message);
-    if (!message) setDraft(null);
-  }
-  return (
-    <>
-      <section className={styles.intro}>
-        <span className={styles.kicker}>01 / Your day</span>
-        <h1>Start with what matters.</h1>
-        <p>
-          Tell us where you need to be, when, and which obligations cannot be missed. Each profile
-          keeps its own plan.
-        </p>
-        <Link className={styles.pageAction} to="/aftershock">
-          Simulate my journey →
-        </Link>
-      </section>
-      <div className={styles.profiles} aria-label="Citizen profiles">
-        {profiles.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={profile === item.id ? styles.profileSelected : styles.profile}
-            aria-pressed={profile === item.id}
-            onClick={() => selectProfile(item.id)}
-          >
-            <span className={styles.avatar}>{item.initials}</span>
-            <span>
-              <strong>{item.name}</strong>
-              <small>{item.role}</small>
-            </span>
-            <span aria-hidden="true">{profile === item.id ? '✓' : ''}</span>
-          </button>
-        ))}
-      </div>
-      <div className={styles.grid}>
-        <section className={styles.card}>
-          <span className={styles.kicker}>YOUR INPUTS</span>
-          <h2>Daily plan</h2>
-          <div className={styles.fields}>
-            <label>
-              Starting location
-              <select
-                value={plan.startPlace}
-                onChange={(event) => updatePlan({ ...plan, startPlace: event.target.value })}
-              >
-                {city.places.map((place) => (
-                  <option key={place.id} value={place.id}>
-                    {place.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Departure time
-              <input
-                type="time"
-                value={minutesToTime(plan.startTime)}
-                onChange={(event) => {
-                  const time = timeToMinutes(event.target.value);
-                  if (Number.isFinite(time)) updatePlan({ ...plan, startTime: time });
-                }}
-              />
-            </label>
-          </div>
-          <p>
-            {base.completed} of {plan.activities.length} obligations completed in the baseline.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(blank(plan.startTime));
-              setError('');
-            }}
-            disabled={plan.activities.length >= 6}
-          >
-            Add obligation
-          </button>
-        </section>
-        <section className={styles.card}>
-          <span className={styles.kicker}>YOUR OBLIGATIONS</span>
-          <h2>Visits to protect</h2>
-          {plan.activities.length === 0 && <p>No obligations yet.</p>}
-          {plan.activities.map((activity, index) => (
-            <article key={activity.id} className={styles.activity}>
-              <h3>{activity.title}</h3>
-              <p>
-                {city.places.find((place) => place.id === activity.place)?.name} ·{' '}
-                {activity.duration} minutes · {activity.priority}
-              </p>
-              <p>
-                Deadline {minutesToTime(activity.deadline)} ({activity.deadlineType})
-                {activity.fixedOrder ? ' · Fixed order' : ''}
-              </p>
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDraft({ ...activity });
-                    setError('');
-                  }}
-                >
-                  Edit
-                </button>
-                <button type="button" onClick={() => removeActivity(activity.id)}>
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Move ${activity.title} up`}
-                  disabled={index === 0}
-                  onClick={() => moveActivity(activity.id, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Move ${activity.title} down`}
-                  disabled={index === plan.activities.length - 1}
-                  onClick={() => moveActivity(activity.id, 1)}
-                >
-                  ↓
-                </button>
-              </div>
-            </article>
-          ))}
-        </section>
-      </div>
-      {draft && (
-        <div className={styles.modalBackdrop}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="editor-title"
-            className={styles.editor}
-            onKeyDown={(event) => { if (event.key === 'Escape') setDraft(null); }}
-          >
-            <form onSubmit={submit} className={styles.fields}>
-              <h2 id="editor-title">
-                {plan.activities.some((item) => item.id === draft.id) ? 'Edit' : 'Add'} obligation
-              </h2>
-              <label>
-                Activity name
-                <input
-                  autoFocus
-                  required
-                  maxLength={80}
-                  value={draft.title}
-                  onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-                />
-              </label>
-              <label>
-                Location
-                <select
-                  value={draft.place}
-                  onChange={(event) => setDraft({ ...draft, place: event.target.value })}
-                >
-                  {city.places.map((place) => (
-                    <option key={place.id} value={place.id}>
-                      {place.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Duration (minutes)
-                <input
-                  type="number"
-                  min="1"
-                  max="240"
-                  value={draft.duration}
-                  onChange={(event) => setDraft({ ...draft, duration: Number(event.target.value) })}
-                />
-              </label>
-              <label>
-                Earliest start
-                <input
-                  type="time"
-                  value={minutesToTime(draft.earliest)}
-                  onChange={(event) =>
-                    setDraft({ ...draft, earliest: timeToMinutes(event.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Deadline
-                <input
-                  type="time"
-                  value={minutesToTime(draft.deadline)}
-                  onChange={(event) =>
-                    setDraft({ ...draft, deadline: timeToMinutes(event.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Deadline applies to
-                <select
-                  value={draft.deadlineType}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      deadlineType: event.target.value === 'arrival' ? 'arrival' : 'finish',
-                    })
-                  }
-                >
-                  <option value="finish">Completion</option>
-                  <option value="arrival">Arrival</option>
-                </select>
-              </label>
-              <label>
-                Priority
-                <select
-                  value={draft.priority}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      priority: event.target.value === 'essential' ? 'essential' : 'flexible',
-                    })
-                  }
-                >
-                  <option value="essential">Essential</option>
-                  <option value="flexible">Flexible</option>
-                </select>
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={draft.fixedOrder}
-                  onChange={(event) => setDraft({ ...draft, fixedOrder: event.target.checked })}
-                />{' '}
-                Preserve relative order
-              </label>
-              {error && (
-                <p role="alert" className={styles.error}>
-                  {error}
-                </p>
-              )}
-              <div className={styles.actions}>
-                <button type="submit">Save obligation</button>
-                <button type="button" onClick={() => setDraft(null)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      <section className={styles.card}>
-        <span className={styles.kicker}>BASELINE CHECK</span>
-        <h2>Is your original plan possible?</h2>
-        <Journey result={base} />
-        <div className={base.all ? styles.success : styles.warning}>
-          <strong>
-            {base.all
-              ? 'Ready for a real-world interruption.'
-              : 'Your plan has constraints to resolve.'}
-          </strong>
-          <p>
-            {base.all
-              ? 'Every visit fits in the normal city network. Next, see what happens when transport is disrupted.'
-              : 'Review the conflicts above or explore recovery alternatives.'}
-          </p>
-        </div>
-        <p>
-          <Link to="/aftershock">Continue to Aftershock</Link>
-        </p>
-      </section>
-    </>
-  );
+  const dialog = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => { if (draft && dialog.current && !dialog.current.open) dialog.current.showModal(); else if (!draft && dialog.current?.open) dialog.current.close(); }, [draft]);
+  const open = (activity: Activity) => { returnFocus.current = document.activeElement as HTMLElement; setError(''); setDraft(activity); };
+  const close = () => { setDraft(null); dialog.current?.close(); returnFocus.current?.focus(); };
+  function submit(event: FormEvent) { event.preventDefault(); if (!draft) return; const message = saveActivity(draft); setError(message); if (!message) close(); }
+  return <>
+    <div className="page-heading"><div><div className="kicker">01 / YOUR DAY</div><h1>Start with what matters.</h1><p>Tell us where you need to be, when, and which obligations cannot be missed.</p></div><Link className="btn primary" to="/aftershock">Simulate my journey <OriginalIcon name="arrow"/></Link></div>
+    <div className="profile-grid" aria-label="Citizen profiles">{profiles.map((item) => <button key={item.id} type="button" className={`profile-card ${profile === item.id ? 'selected' : ''}`} aria-pressed={profile === item.id} onClick={() => selectProfile(item.id)}><span className={`avatar ${item.id}`}>{item.initials}</span><span><strong>{item.name}</strong><small>{item.role}</small></span><span className="profile-check">{profile === item.id && <OriginalIcon name="check"/>}</span></button>)}</div>
+    <div className="two-col plan-grid"><section className="panel"><div className="panel-heading"><div><div className="kicker">YOUR INPUTS</div><h2>{profiles.find((item) => item.id === profile)?.name}’s obligations</h2></div><button type="button" className="btn secondary" disabled={plan.activities.length >= 6} onClick={() => open(blank(plan.startTime))}><OriginalIcon name="plus"/>Add activity</button></div>
+      <div className="panel-body"><div className="field-pair"><label>Starting location<select value={plan.startPlace} onChange={(event) => updatePlan({ ...plan, startPlace: event.target.value })}>{city.places.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}</select></label><label>Departure time<input type="time" value={minutesToTime(plan.startTime)} onChange={(event) => { const time = timeToMinutes(event.target.value); if (Number.isFinite(time)) updatePlan({ ...plan, startTime: time }); }}/></label></div><div className="divider"/>
+      <div className="activity-list">{plan.activities.length ? plan.activities.map((activity, index) => <div key={activity.id} className="activity"><div className="step-number">{index + 1}</div><div className="activity-body"><strong>{activity.title}</strong><small>{city.places.find((place) => place.id === activity.place)?.name} · {activity.duration} min · {activity.deadlineType} by {minutesToTime(activity.deadline)}</small><div className="activity-tags"><span className={`tag ${activity.priority === 'essential' ? 'essential' : ''}`}>{activity.priority}</span>{activity.fixedOrder && <span className="tag">Order locked</span>}{activity.earliest > 0 && <span className="tag">After {minutesToTime(activity.earliest)}</span>}</div></div><div className="activity-actions"><button type="button" className="icon-btn" aria-label={`Move ${activity.title} up`} disabled={index === 0} onClick={() => moveActivity(activity.id, -1)}>↑</button><button type="button" className="icon-btn" aria-label={`Move ${activity.title} down`} disabled={index === plan.activities.length - 1} onClick={() => moveActivity(activity.id, 1)}>↓</button><button type="button" className="icon-btn" aria-label={`Edit ${activity.title}`} onClick={() => open({ ...activity })}><OriginalIcon name="edit"/></button><button type="button" className="icon-btn" aria-label={`Delete ${activity.title}`} onClick={() => removeActivity(activity.id)}><OriginalIcon name="trash"/></button></div></div>) : <div className="empty">Your plan is empty. Add an activity to begin.</div>}</div>
+      <p className="fine">Up to six activities. The engine respects service hours, duration, earliest start, deadlines and locked order.</p>{acceptedOrder && <div className="callout success"><strong>Recovery accepted</strong><p>Your recovered itinerary is saved separately from the original, so you can compare them and keep deferred activities visible.</p><Link className="btn secondary" to="/my-day/accepted">View accepted itinerary</Link></div>}</div></section>
+      <section className="panel"><div className="panel-heading"><div><div className="kicker">BASELINE CHECK</div><h2>Is the original plan possible?</h2></div><span className={`tag ${base.all ? 'green' : 'red'}`}>{base.completed}/{plan.activities.length} feasible</span></div><div className="panel-body"><Journey result={base}/><div className={`callout ${base.all ? 'success' : 'warning'}`}><strong>{base.all ? 'Ready for a real-world interruption.' : 'Your plan has constraints to resolve.'}</strong><p>{base.all ? 'Every activity fits in the normal city network. Next, see what happens when transport is disrupted.' : 'Check the conflicts above or use the recovery engine to explore alternatives even without a disruption.'}</p></div><Link className="btn primary full" to="/aftershock">Continue to simulation <OriginalIcon name="arrow"/></Link></div></section></div>
+    <dialog ref={dialog} id="editor" aria-labelledby="editor-title" onClose={() => { setDraft(null); returnFocus.current?.focus(); }}>{draft && <form onSubmit={submit}><div className="panel-heading"><div><div className="kicker">YOUR DAILY PLAN</div><h2 id="editor-title">{plan.activities.some((item) => item.id === draft.id) ? 'Edit' : 'Add'} obligation</h2></div><button type="button" className="icon-btn" aria-label="Close editor" onClick={close}>×</button></div><div className="panel-body"><label>Activity name<input autoFocus required maxLength={80} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })}/></label><label>Location<select value={draft.place} onChange={(event) => setDraft({ ...draft, place: event.target.value })}>{city.places.map((place) => <option key={place.id} value={place.id}>{place.name} · {minutesToTime(place.open)}–{minutesToTime(place.close)}</option>)}</select></label><div className="field-pair"><label>Duration (minutes)<input type="number" min="1" max="240" required value={draft.duration} onChange={(event) => setDraft({ ...draft, duration: Number(event.target.value) })}/></label><label>Earliest start<input type="time" required value={minutesToTime(draft.earliest)} onChange={(event) => setDraft({ ...draft, earliest: timeToMinutes(event.target.value) })}/></label></div><div className="field-pair"><label>Deadline<input type="time" required value={minutesToTime(draft.deadline)} onChange={(event) => setDraft({ ...draft, deadline: timeToMinutes(event.target.value) })}/></label><label>Deadline applies to<select value={draft.deadlineType} onChange={(event) => setDraft({ ...draft, deadlineType: event.target.value === 'arrival' ? 'arrival' : 'finish' })}><option value="finish">Completion</option><option value="arrival">Arrival</option></select></label></div><label>Priority<select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value === 'essential' ? 'essential' : 'flexible' })}><option value="essential">Essential</option><option value="flexible">Flexible</option></select></label><label className="check-line"><input type="checkbox" checked={draft.fixedOrder} onChange={(event) => setDraft({ ...draft, fixedOrder: event.target.checked })}/> Preserve relative order during recovery</label>{error && <p id="editor-error" role="alert" className="reason">{error}</p>}<button type="submit" className="btn primary full">Save obligation <OriginalIcon name="check"/></button></div></form>}</dialog>
+  </>;
 }
+

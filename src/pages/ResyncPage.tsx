@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { useJourney } from '../app/model';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import { Journey, Timeline } from '../contexts/temporal-simulation/presentation/public-api';
@@ -7,7 +8,6 @@ import { CityMap } from '../contexts/city-network/presentation/public-api';
 import { Playback } from '../shared/ui/Playback';
 import { minutesToTime } from '../contexts/citizen-planning/public-api';
 import { city } from '../contexts/city-network/public-api';
-import styles from './Page.module.css';
 
 export function ResyncPage() {
   const { plan, base, disrupted, candidates } = useJourney();
@@ -17,161 +17,15 @@ export function ResyncPage() {
   const acceptedOrder = useScenario((state) => state.acceptedOrder);
   const chosen = candidates[index] ?? candidates[0];
   const name = (id: string) => city.places.find((place) => place.id === id)?.name ?? id;
-  return (
-    <>
-      <section className={styles.intro}>
-        <span className={styles.kicker}>03 / Re-Sync</span>
-        <h1>Find a way forward.</h1>
-        <p>
-          Compare feasible alternatives. Essential obligations come first, and missed visits stay
-          visible.
-        </p>
-        <Link className={styles.subtleAction} to="/aftershock">
-          ← Back to Aftershock
-        </Link>
-      </section>
-      {acceptedOrder && (
-        <div className={styles.success}>
-          <strong>Schedule reclaimed.</strong>
-          <p>
-            Your accepted itinerary is saved.{' '}
-            <Link to="/my-day/accepted">View accepted itinerary</Link>
-          </p>
-        </div>
-      )}
-      {chosen ? (
-        <>
-          <div className={styles.metrics}>
-            <div>
-              <span>Aftershock</span>
-              <strong>
-                {disrupted.completed}/{plan.activities.length}
-              </strong>
-              <small>Confirmed obligations</small>
-            </div>
-            <div>
-              <span>Selected recovery</span>
-              <strong>
-                {chosen.completed}/{plan.activities.length}
-              </strong>
-              <small>Feasible obligations</small>
-            </div>
-            <div>
-              <span>Essential protected</span>
-              <strong>
-                {chosen.essential}/
-                {plan.activities.filter((activity) => activity.priority === 'essential').length}
-              </strong>
-              <small>Mandatory priorities</small>
-            </div>
-            <div>
-              <span>Travel difference</span>
-              <strong>
-                {disrupted.travel - chosen.travel >= 0 ? '+' : ''}
-                {disrupted.travel - chosen.travel}m
-              </strong>
-              <small>Versus disrupted route</small>
-            </div>
-          </div>
-          <div className={styles.grid}>
-            <section className={styles.card}>
-              <span className={styles.kicker}>ALTERNATIVE FUTURES</span>
-              <h2>Choose a recovery strategy</h2>
-              <p className={styles.muted}>
-                Ranked by essential visits protected, total visits completed, earliest finish, and
-                travel time.
-              </p>
-              <div className={styles.candidates}>
-                {candidates.map((candidate, at) => (
-                  <button
-                    type="button"
-                    key={`${candidate.order.join('-')}-${candidate.steps.map((step) => step.path?.edges.join('-')).join('|')}`}
-                    className={at === index ? styles.candidateSelected : styles.candidate}
-                    aria-pressed={at === index}
-                    onClick={() => setIndex(at)}
-                  >
-                    <span>
-                      <small>{at === 0 ? 'RECOMMENDED' : `OPTION ${at + 1}`}</small>
-                      <strong>
-                        {candidate.label === 'Reroute' ? 'Keep activity order' : candidate.label}
-                      </strong>
-                      <span>
-                        {candidate.steps.map((step) => name(step.activity.place)).join(' → ')}
-                      </span>
-                      <span>
-                        Finish {minutesToTime(candidate.finish)} · Travel {candidate.travel}m ·{' '}
-                        {candidate.omitted.length
-                          ? `${candidate.omitted.length} deferred`
-                          : 'Nothing deferred'}
-                      </span>
-                    </span>
-                    <b>
-                      {candidate.completed}/{plan.activities.length}
-                    </b>
-                  </button>
-                ))}
-              </div>
-            </section>
-            <section className={styles.card}>
-              <span className={styles.kicker}>YOUR SELECTED FUTURE</span>
-              <h2>{chosen.all ? 'A complete recovery' : 'A partial recovery'}</h2>
-              <Journey result={chosen} />
-              <div className={chosen.all ? styles.success : styles.warning}>
-                <strong>
-                  {chosen.all
-                    ? 'Ready to reclaim your schedule.'
-                    : 'Some visits must be postponed.'}
-                </strong>
-                <p>
-                  {chosen.all
-                    ? 'Every activity meets its service and personal deadlines.'
-                    : 'Deferred activities remain in your original plan and are shown above.'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    chosen.all ||
-                    window.confirm(
-                      'Accept this partial plan? Deferred obligations will remain visible.',
-                    )
-                  )
-                    accept(
-                      chosen.order,
-                      chosen.steps.map((step) => step.path?.edges ?? []),
-                    );
-                }}
-              >
-                Accept this plan
-              </button>
-              <p>
-                <Link to="/my-day/accepted">View accepted itinerary</Link>
-              </p>
-            </section>
-          </div>
-          <section className={styles.card}>
-            <span className={styles.kicker}>BEFORE / AFTER / RECOVERY</span>
-            <h2>Compare the timelines</h2>
-            <Timeline
-              start={plan.startTime}
-              rows={[
-                { label: 'Original', result: base },
-                { label: 'Aftershock', result: disrupted },
-                { label: 'Re-Sync', result: chosen },
-              ]}
-            />
-          </section>
-      <CityMap result={chosen} incident={incident} />
-      <Playback start={plan.startTime} end={Math.max(base.finish, disrupted.finish, chosen.finish)} />
-        </>
-      ) : (
-        <section className={styles.card}>
-          <h2>No feasible route found</h2>
-          <p>No obligation can currently be completed. Adjust the disruption or your plan.</p>
-          <Link to="/aftershock">Edit disruption</Link>
-        </section>
-      )}
-    </>
-  );
+  const essential = plan.activities.filter((activity) => activity.priority === 'essential').length;
+  const matchesAccepted = chosen && chosen.order.join('|') === acceptedOrder?.join('|');
+  return <>
+    <div className="page-heading"><div><div className="kicker">03 / RE-SYNC</div><h1>Choose a better future.</h1><p>Compare feasible alternatives. Essential obligations come first; no missed visit is silently removed.</p></div><Link className="btn secondary" to="/aftershock"><OriginalIcon name="back"/>Back to Aftershock</Link></div>
+    {acceptedOrder && <div className="accepted-banner"><OriginalIcon name="check"/><div><strong>Schedule reclaimed.</strong><p>Your accepted plan is saved. {chosen?.omitted.length ? `${chosen.omitted.length} deferred activities remain visible.` : 'All required activities fit.'}{!matchesAccepted && ' You are previewing a different option; accept it to replace the saved itinerary.'}</p></div><button type="button" className="btn secondary" onClick={() => accept(null)}>Undo acceptance</button><Link className="btn secondary" to="/my-day/accepted">View itinerary</Link></div>}
+    <div className="stat-grid"><div className="stat bad-stat"><span>Aftershock</span><strong>{disrupted.completed}/{plan.activities.length}</strong><small>Projected feasibility</small></div><div className="stat good-stat"><span>Selected recovery</span><strong>{chosen?.completed ?? 0}/{plan.activities.length}</strong><small>Feasible obligations</small></div><div className="stat"><span>Essential protected</span><strong>{chosen?.essential ?? 0}/{essential}</strong><small>Mandatory priorities</small></div><div className="stat"><span>Travel time saved</span><strong>{chosen && disrupted.travel - chosen.travel >= 0 ? '+' : ''}{chosen ? `${disrupted.travel - chosen.travel}m` : '—'}</strong><small>Vs. original disrupted route</small></div></div>
+    <div className="two-col recover-grid"><section className="panel"><div className="panel-heading"><div><div className="kicker">ALTERNATIVE FUTURES</div><h2>Choose a recovery strategy</h2></div><span className="tag">{candidates.length} options</span></div><div className="panel-body"><p className="muted">Ranked by essential activities protected, total activities completed, then earliest finish and travel time.</p><div className="candidate-list">{candidates.length ? candidates.map((candidate, at) => <button type="button" key={`${candidate.order.join('-')}-${at}`} className={`candidate ${at === index ? 'selected' : ''}`} aria-pressed={at === index} onClick={() => setIndex(at)}><div><span className={`tag ${at === 0 ? 'green' : ''}`}>{at === 0 ? 'Recommended' : candidate.label}</span><strong>{candidate.label === 'Reroute' ? 'Keep activity order' : candidate.label}</strong><small>{candidate.steps.map((step) => name(step.activity.place)).join(' → ')}</small><small>{candidate.steps[0]?.path?.nodes.map(name).join(' → ')}</small><small>Finish {minutesToTime(candidate.finish)} · Travel {candidate.travel}m{candidate.omitted.length ? ` · ${candidate.omitted.length} deferred` : ''}</small></div><b>{candidate.completed}/{plan.activities.length}</b></button>) : <div className="empty">No feasible activity remains. Edit your plan or change the disruption. No invalid recovery is offered.</div>}</div></div></section>
+    <section className="panel"><div className="panel-heading"><div><div className="kicker">YOUR SELECTED FUTURE</div><h2>{chosen ? chosen.all ? 'A complete recovery' : 'A partial recovery' : 'No feasible recovery'}</h2></div>{chosen && <span className={`tag ${chosen.all ? 'green' : 'red'}`}>{chosen.all ? 'All constraints met' : 'Some obligations deferred'}</span>}</div><div className="panel-body">{chosen ? <><Journey result={chosen}/><div className={`callout ${chosen.all ? 'success' : 'warning'}`}><strong>{chosen.all ? 'Ready to reclaim your schedule.' : 'Some obligations must be postponed.'}</strong><p>{chosen.all ? 'Every activity meets its service and personal deadlines.' : 'This option protects the feasible activities listed above; deferred activities are kept in your original plan.'}</p></div>{matchesAccepted ? <Link className="btn primary full" to="/my-day/accepted">View accepted itinerary</Link> : <button type="button" className="btn primary full" onClick={() => { if (chosen.all || window.confirm('Accept this partial recovery? Deferred obligations will remain visible.')) accept(chosen.order, chosen.steps.map((step) => step.path?.edges ?? [])); }}>{chosen.all ? 'Reclaim schedule' : 'Accept partial recovery'} <OriginalIcon name="check"/></button>}</> : <p className="muted">Try changing the event or reviewing the original deadlines.</p>}</div></section></div>
+    <section className="panel timeline-panel"><div className="panel-heading"><div><div className="kicker">BEFORE / AFTER / RECOVERY</div><h2>Compare the timelines</h2></div></div><div className="panel-body"><Timeline start={plan.startTime} rows={[{label:'Original',result:base},{label:'Aftershock',result:disrupted},...(chosen ? [{label:'Re-Sync',result:chosen}] : [])]}/></div></section>
+    {chosen && <div className="recovery-map"><CityMap result={chosen} incident={incident}/><Playback start={plan.startTime} end={Math.max(base.finish, disrupted.finish, chosen.finish)}/></div>}
+  </>;
 }

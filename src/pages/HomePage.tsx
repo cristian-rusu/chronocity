@@ -1,36 +1,35 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowUpRight, Info, Activity, CalendarDays, RefreshCcw, Building2 } from 'lucide-react';
+﻿import { Link, useNavigate } from 'react-router-dom';
+import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { useJourney } from '../app/model';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import { defaultIncident } from '../contexts/aftershock/public-api';
 import { CityMap } from '../contexts/city-network/presentation/public-api';
-import styles from './HomePage.module.css';
 
 const features = [
   {
     number: '01',
-    icon: CalendarDays,
+    icon: 'plan',
     title: 'Plan around real constraints',
     copy: 'Set your stops, service hours and deadlines. Know whether your day is possible before you leave.',
     to: '/my-day',
   },
   {
     number: '02',
-    icon: Activity,
+    icon: 'pulse',
     title: 'See the ripple effect',
-    copy: 'Simulate a disruption. Follow the consequences across your journey, beyond one train line.',
+    copy: 'Simulate a disruption. Follow the consequences across your journey, not just on one train line.',
     to: '/aftershock',
   },
   {
     number: '03',
-    icon: RefreshCcw,
+    icon: 'recover',
     title: 'Reclaim your day',
-    copy: 'Compare new routes and activity orders. Keep essential obligations safe and see what needs postponing.',
+    copy: 'Compare new routes and activity orders. Keep essential obligations safe, and see what needs postponing.',
     to: '/resync',
   },
   {
     number: '04',
-    icon: Building2,
+    icon: 'lab',
     title: 'Change the system',
     copy: 'Test city interventions against 60 synthetic residents and a limited budget.',
     to: '/city-lab',
@@ -40,13 +39,14 @@ const features = [
 export function HomePage() {
   const { base } = useJourney();
   const updateIncident = useScenario((state) => state.updateIncident);
+  const reset = useScenario((state) => state.reset);
   const navigate = useNavigate();
   return (
     <>
-      <section className={styles.hero}>
-        <div className={styles.copy}>
-          <span className={styles.kicker}>
-            <i /> HACK THE FUTURE / ACHRONA
+      <section className={'hero'}>
+        <div className={'hero-copy'}>
+          <span className="kicker">
+            <i className="live-dot" /> HACK THE FUTURE / ACHRONA
           </span>
           <h1>
             The city moves.
@@ -57,44 +57,47 @@ export function HomePage() {
             One delayed tram can ruin an entire afternoon. ChronoCity shows what happens next — and
             finds a way to get your day back.
           </p>
-          <div className={styles.actions}>
-            <Link className={styles.primary} to="/my-day">
-              Plan my day <ArrowUpRight aria-hidden="true" />
+          <div className={'hero-actions'}>
+            <Link className={'btn primary'} to="/my-day">
+              Plan my day <OriginalIcon name="arrow" />
             </Link>
             <button
               type="button"
+              className="btn ghost"
               onClick={() => {
-                updateIncident(defaultIncident);
+                if (!window.confirm('Load the sample disruption? Your current scenario will be replaced.')) return;
+                reset();
+                updateIncident({ ...defaultIncident, delay: 30 });
                 navigate('/aftershock');
               }}
             >
-              Try a disruption <Activity aria-hidden="true" />
+              <OriginalIcon name="pulse" /> Try a disruption
             </button>
           </div>
-          <span className={styles.note}>
-            <Info size="18" aria-hidden="true" /> An interactive prototype with a fictional city and
+          <span className={'hero-note'}>
+            <OriginalIcon name="info" /> An interactive prototype with a fictional city and
             calculated scenarios.
           </span>
         </div>
-        <div className={styles.art}>
+        <div className={'hero-art'}>
           <CityMap result={base} incident={defaultIncident} hero />
-          <div className={`${styles.float} ${styles.floatTop}`}>
-            <small>AFTERSHOCK</small>
+          <div className={`${'float-card'} ${'float-top'}`}>
+            <small className="kicker">AFTERSHOCK</small>
             <strong>+30 min</strong>
             <span>Tram interruption</span>
           </div>
-          <div className={`${styles.float} ${styles.floatBottom}`}>
-            <small>A BETTER FUTURE</small>
+          <div className={`${'float-card'} ${'float-bottom'}`}>
+            <small className="kicker">A BETTER FUTURE</small>
             <strong>
-              Find another way <ArrowUpRight size="20" aria-hidden="true" />
+              Find another way <OriginalIcon name="arrow" />
             </strong>
             <span>Protect the things that matter.</span>
           </div>
         </div>
       </section>
-      <section className={styles.context}>
+      <section className={'home-context'}>
         <div>
-          <span className={styles.sectionKicker}>THE INVISIBLE BARRIER</span>
+          <span className={'kicker'}>THE INVISIBLE BARRIER</span>
           <h2>
             Same city.
             <br />
@@ -108,17 +111,17 @@ export function HomePage() {
           works.
         </p>
       </section>
-      <section className={styles.features} aria-label="Explore ChronoCity">
-        {features.map(({ number, icon: Icon, title, copy, to }) => (
-          <Link key={number} to={to} className={styles.feature}>
-            <div className={styles.featureTop}>
+      <section className="home-cards" aria-label="Explore ChronoCity">
+        {features.map(({ number, icon, title, copy, to }) => (
+          <Link key={number} to={to} className={'home-card'}>
+            <div className="card-top">
               <span>{number}</span>
-              <Icon size="24" aria-hidden="true" />
+              <OriginalIcon name={icon as 'plan'|'pulse'|'recover'|'lab'} />
             </div>
             <h3>{title}</h3>
             <p>{copy}</p>
-            <span className={styles.featureLink}>
-              Explore <ArrowUpRight size="18" aria-hidden="true" />
+            <span className="card-link">
+              Explore <OriginalIcon name="arrow" />
             </span>
           </Link>
         ))}
@@ -126,3 +129,4 @@ export function HomePage() {
     </>
   );
 }
+

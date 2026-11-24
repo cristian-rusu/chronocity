@@ -1,7 +1,7 @@
-import { city } from '../../city-network/public-api';
+﻿import { city } from '../../city-network/public-api';
 import { minutesToTime, timeToMinutes } from '../../citizen-planning/public-contracts';
 import type { Incident } from '../public-contracts';
-import styles from './DisruptionPanel.module.css';
+import { OriginalIcon } from '../../../shared/ui/OriginalIcon';
 
 export function DisruptionPanel({
   incident,
@@ -11,12 +11,11 @@ export function DisruptionPanel({
   onChange: (incident: Incident) => void;
 }) {
   return (
-    <section className={styles.card}>
-      <span className={styles.kicker}>AFTERSHOCK / EVENT</span>
-      <h2>Introduce a disruption</h2>
-      <div className={styles.fields}>
+    <section className="panel incident-panel">
+      <div className="panel-heading"><div><div className="kicker coral">AFTERSHOCK / EVENT</div><h2>Introduce a disruption</h2></div><span className="event-icon"><OriginalIcon name="pulse"/></span></div>
+      <div className={'panel-body'}>
         <label>
-          Connection
+          Transport connection
           <select
             value={incident.edge}
             onChange={(event) => update({ ...incident, edge: event.target.value })}
@@ -29,19 +28,8 @@ export function DisruptionPanel({
             ))}
           </select>
         </label>
-        <label>
-          Delay (minutes)
-          <input
-            type="number"
-            min="0"
-            max="180"
-            value={incident.delay}
-            onChange={(event) =>
-              update({ ...incident, delay: Math.min(180, Math.max(0, Number(event.target.value))) })
-            }
-          />
-        </label>
-        <div className={styles.presets} aria-label="Delay presets">
+        <label>Additional delay</label>
+        <div className={'delay-options'} aria-label="Delay presets">
           {[0, 15, 30, 60].map((minutes) => (
             <button
               type="button"
@@ -53,8 +41,8 @@ export function DisruptionPanel({
             </button>
           ))}
         </div>
-        <label>
-          Starts
+        <div className="field-pair"><label>
+          Incident starts
           <input
             type="time"
             value={minutesToTime(incident.start)}
@@ -65,7 +53,7 @@ export function DisruptionPanel({
           />
         </label>
         <label>
-          Ends
+          Incident ends
           <input
             type="time"
             value={minutesToTime(incident.end)}
@@ -74,29 +62,27 @@ export function DisruptionPanel({
               if (value > incident.start) update({ ...incident, end: value });
             }}
           />
-        </label>
+        </label></div>
         <label>
           Service closure
           <select
             value={incident.closure}
             onChange={(event) => update({ ...incident, closure: event.target.value })}
           >
-            <option value="">None</option>
-            {city.places.map((place) => (
+            <option value="">No service closure</option>
+            {city.places.filter((place) => place.open > 0).map((place) => (
               <option key={place.id} value={place.id}>
                 {place.name}
               </option>
             ))}
           </select>
         </label>
-        <p className={styles.hint}>
-          The delay affects entry to this connection during the event window. A closure lasts the
-          modeled day.
-        </p>
-        <button type="button" onClick={() => update({ ...incident, delay: 0, closure: '' })}>
-          Clear disruption
+        <p className="fine">Delay affects entries into the selected connection during the event window; a closure lasts the modeled day.</p>
+        <button type="button" className="btn secondary" onClick={() => update({ ...incident, delay: 0, closure: '' })}>
+          <OriginalIcon name="reset"/> Clear disruption
         </button>
       </div>
     </section>
   );
 }
+
