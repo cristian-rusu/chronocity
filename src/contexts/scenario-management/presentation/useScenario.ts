@@ -3,12 +3,18 @@ import { city } from '../../city-network/public-api';
 import type { Activity, Plan } from '../../citizen-planning/public-api';
 import { validateActivity } from '../../citizen-planning/public-api';
 import type { Incident } from '../../aftershock/public-api';
-import type { Policy } from '../../urban-intelligence/public-api';
-import { policyCost } from '../../urban-intelligence/public-api';
 import type { ScenarioState } from '../application/scenario-storage.port';
 import { browserScenarioStorage } from '../infrastructure/public-api';
 
-const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
+function safeLocalStorage(): Storage | undefined {
+  try {
+    return typeof localStorage === 'undefined' ? undefined : localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+const storage = safeLocalStorage();
 const scenarioStorage = browserScenarioStorage(storage);
 const initial = scenarioStorage.load();
 type Store = ScenarioState & {
@@ -19,9 +25,6 @@ type Store = ScenarioState & {
   removeActivity: (id: string) => void;
   moveActivity: (id: string, delta: number) => void;
   updateIncident: (incident: Incident) => void;
-  updatePolicy: (policy: Policy) => void;
-  setBudget: (budget: number) => void;
-  setObjective: (objective: 'access' | 'equity') => void;
   accept: (order: string[] | null, routes?: string[][] | null) => void;
   reset: () => void;
 };
@@ -33,12 +36,11 @@ export const useScenario = create<Store>((set, get) => ({
   ...initial,
   storageAvailable: storage !== undefined,
   selectProfile: (profile) =>
-    set((state) => ({
-      profile,
-      acceptedOrder: null,
-      acceptedRoutes: null,
-      storageAvailable: persist({ ...state, profile, acceptedOrder: null, acceptedRoutes: null }),
-    })),
+    set((state) => {
+      if (!Object.prototype.hasOwnProperty.call(state.plans, profile)) return state;
+      const next = { ...state, profile, acceptedOrder: null, acceptedRoutes: null };
+      return { ...next, storageAvailable: persist(next) };
+    }),
   updatePlan: (plan) =>
     set((state) => {
       const next = {
@@ -81,28 +83,11 @@ export const useScenario = create<Store>((set, get) => ({
   },
   updateIncident: (incident) =>
     set((state) => {
-      const next = { ...state, incident, acceptedOrder: null, acceptedRoutes: null };
-      return { ...next, storageAvailable: persist(next) };
-    }),
-  updatePolicy: (policy) =>
-    set((state) => {
-      if (policyCost(policy) > state.budget) return state;
-      const next = { ...state, policy };
-      return { ...next, storageAvailable: persist(next) };
-    }),
-  setBudget: (budget) =>
-    set((state) => {
-      const next = {
-        ...state,
-        budget,
-        policy:
-          policyCost(state.policy) <= budget ? state.policy : scenarioStorage.defaults().policy,
+      const normalized: Incident = {
+        ...incident,
+        delay: Number.isFinite(incident.delay) ? Math.max(0, Math.round(incident.delay)) : 0,
       };
-      return { ...next, storageAvailable: persist(next) };
-    }),
-  setObjective: (objective) =>
-    set((state) => {
-      const next = { ...state, objective };
+      const next = { ...state, incident: normalized, acceptedOrder: null, acceptedRoutes: null };
       return { ...next, storageAvailable: persist(next) };
     }),
   accept: (acceptedOrder, acceptedRoutes = null) =>

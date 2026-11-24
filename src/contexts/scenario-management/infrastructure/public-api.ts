@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { profiles } from '../../citizen-planning/public-api';
 import { city } from '../../city-network/public-api';
 import type { Plan } from '../../citizen-planning/public-api';
-import { blankPolicy, type Policy } from '../../urban-intelligence/public-api';
 import { defaultIncident, type Incident } from '../../aftershock/public-api';
 import type { ScenarioStorage } from '../application/scenario-storage.port';
 
@@ -35,7 +34,7 @@ const plan = z
 const incident = z
   .object({
     edge: z.string(),
-    delay: z.number().min(0),
+    delay: z.number().int().min(0),
     start: z.number().min(0),
     end: z.number().max(1440),
     closure: z.string(),
@@ -46,20 +45,11 @@ const incident = z
       edgeIds.has(value.edge) &&
       (value.closure === '' || locationIds.has(value.closure)),
   );
-const policy = z.object({
-  shuttle: z.boolean(),
-  lateHall: z.boolean(),
-  lateChild: z.boolean(),
-  extraBus: z.boolean(),
-});
 const schema = z.object({
   version: z.literal(1),
   profile: z.string(),
   plans: z.record(z.string(), plan),
   incident,
-  policy,
-  budget: z.number().int().min(0).max(9),
-  objective: z.enum(['access', 'equity']),
   acceptedOrder: z.array(z.string()).nullable(),
   acceptedRoutes: z.array(z.array(z.string())).nullable().optional(),
 });
@@ -69,9 +59,6 @@ export type PersistedState = {
   profile: string;
   plans: Record<string, Plan>;
   incident: Incident;
-  policy: Policy;
-  budget: number;
-  objective: 'access' | 'equity';
   acceptedOrder: string[] | null;
   acceptedRoutes?: string[][] | null;
 };
@@ -79,13 +66,17 @@ export const defaults = (): PersistedState => ({
   version: 1,
   profile: profiles[0].id,
   plans: Object.fromEntries(profiles.map((item) => [item.id, structuredClone(item.plan)])),
-  incident: { ...defaultIncident, delay: 0 },
-  policy: { ...blankPolicy },
-  budget: 5,
-  objective: 'access',
+  incident: { ...defaultIncident },
   acceptedOrder: null,
   acceptedRoutes: null,
 });
+
+function hasValidProfileAndPlans(data: PersistedState): boolean {
+  return (
+    profiles.some((item) => item.id === data.profile) &&
+    Object.prototype.hasOwnProperty.call(data.plans, data.profile)
+  );
+}
 
 export function loadState(storage: Pick<Storage, 'getItem'> | undefined): PersistedState {
   const fallback = defaults();
@@ -94,8 +85,12 @@ export function loadState(storage: Pick<Storage, 'getItem'> | undefined): Persis
     const current = storage.getItem('chronocity:v1');
     if (current) {
       const parsed = schema.safeParse(JSON.parse(current));
-      if (parsed.success && profiles.some((item) => item.id === parsed.data.profile))
-        return parsed.data;
+      if (parsed.success && hasValidProfileAndPlans(parsed.data)) {
+        return {
+          ...parsed.data,
+          plans: { ...fallback.plans, ...parsed.data.plans },
+        };
+      }
     }
     const legacy = storage.getItem('chronocity');
     if (legacy) {
@@ -111,13 +106,15 @@ export function loadState(storage: Pick<Storage, 'getItem'> | undefined): Persis
             [String(old.profile)]: old.plan,
           },
           incident: old.incident,
-          policy: old.policy,
-          budget: old.budget,
-          objective: old.objective,
           acceptedOrder: null,
           acceptedRoutes: null,
         });
-        if (parsed.success) return parsed.data;
+        if (parsed.success && hasValidProfileAndPlans(parsed.data)) {
+          return {
+            ...parsed.data,
+            plans: { ...fallback.plans, ...parsed.data.plans },
+          };
+        }
       }
     }
   } catch {

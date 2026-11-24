@@ -30,7 +30,8 @@ export function validateActivity(activity: Activity, locationIds: ReadonlySet<st
 
 export function minutesToTime(minutes: number): string {
   if (!Number.isFinite(minutes)) return '—';
-  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  const total = Math.round(minutes);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
 export function timeToMinutes(value: string): number {

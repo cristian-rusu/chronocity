@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { useJourney } from '../app/model';
 import { useScenario } from '../contexts/scenario-management/public-api';
@@ -9,32 +9,25 @@ const features = [
   {
     number: '01',
     icon: 'plan',
-    title: 'Plan around real constraints',
-    copy: 'Set your stops, service hours and deadlines. Know whether your day is possible before you leave.',
-    to: '/my-day',
+    title: 'Pick a commuter scenario',
+    copy: 'Choose a realistic afternoon schedule or customize stops, service hours, and deadlines.',
+    to: '/recovery',
   },
   {
     number: '02',
     icon: 'pulse',
-    title: 'See the ripple effect',
-    copy: 'Simulate a disruption. Follow the consequences across your journey, not just on one train line.',
-    to: '/aftershock',
+    title: 'Trigger a disruption',
+    copy: 'Delay a tram link or close a service and follow the cascading impact across your timeline.',
+    to: '/recovery',
   },
   {
     number: '03',
     icon: 'recover',
-    title: 'Reclaim your day',
-    copy: 'Compare new routes and activity orders. Keep essential obligations safe, and see what needs postponing.',
-    to: '/resync',
+    title: 'Re-Sync your day',
+    copy: 'Compare alternative routes and reordered visits to protect essential obligations.',
+    to: '/recovery',
   },
-  {
-    number: '04',
-    icon: 'lab',
-    title: 'Change the system',
-    copy: 'Test city interventions against 60 synthetic residents and a limited budget.',
-    to: '/city-lab',
-  },
-];
+] as const;
 
 export function HomePage() {
   const { base } = useJourney();
@@ -58,21 +51,20 @@ export function HomePage() {
             finds a way to get your day back.
           </p>
           <div className={'hero-actions'}>
-            <Link className={'btn primary'} to="/my-day">
-              Plan my day <OriginalIcon name="arrow" />
-            </Link>
             <button
               type="button"
-              className="btn ghost"
+              className="btn primary"
               onClick={() => {
-                if (!window.confirm('Load the sample disruption? Your current scenario will be replaced.')) return;
                 reset();
                 updateIncident({ ...defaultIncident, delay: 30 });
-                navigate('/aftershock');
+                navigate('/recovery');
               }}
             >
-              <OriginalIcon name="pulse" /> Try a disruption
+              Try disruption recovery <OriginalIcon name="arrow" />
             </button>
+            <Link className={'btn ghost'} to="/recovery">
+              <OriginalIcon name="pulse" /> Open workspace
+            </Link>
           </div>
           <span className={'hero-note'}>
             <OriginalIcon name="info" /> An interactive prototype with a fictional city and
@@ -116,7 +108,7 @@ export function HomePage() {
           <Link key={number} to={to} className={'home-card'}>
             <div className="card-top">
               <span>{number}</span>
-              <OriginalIcon name={icon as 'plan'|'pulse'|'recover'|'lab'} />
+              <OriginalIcon name={icon} />
             </div>
             <h3>{title}</h3>
             <p>{copy}</p>
@@ -129,4 +121,3 @@ export function HomePage() {
     </>
   );
 }
-

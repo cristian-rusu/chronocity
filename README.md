@@ -1,6 +1,6 @@
 # ChronoCity
 
-ChronoCity is a static urban time planning demo. A citizen plans obligations in a fictional city, tests a timed transport disruption or service closure, compares recovery routes, and explores municipal interventions across 60 synthetic residents. No accounts, backend, or real travel data are used.
+ChronoCity is a focused frontend prototype for **Personal Disruption Recovery**. A commuter selects or customizes a constrained afternoon schedule in a fictional city (Achrona), introduces a timed transport disruption or service closure, inspects the cascading ripple effect on a live map and timeline, and compares feasible recovery routes (rerouting, reordering, or deferring non-essential visits). No accounts, backend, or real travel data are used.
 
 ## Develop
 
@@ -15,23 +15,17 @@ The standard Vite commands are `npm run build` and `npm run preview`. Quality co
 
 ## Architecture
 
-React Router provides `/`, `/my-day`, `/aftershock`, `/resync`, `/my-day/accepted`, `/city-lab`, and a not-found page. Business calculations live in feature contexts under `src/contexts`. Zustand stores user inputs; simulation results are derived. Local storage is versioned and validated with Zod. See the [architecture overview](docs/architecture/overview.md) for ownership, boundaries, adapters, and limitations.
+React Router provides `/` (overview), `/recovery` (the unified disruption and recovery workspace), and a not-found page. Business calculations live in six feature contexts under `src/contexts`:
 
-## Feature inventory
+- `city-network`: fictional places, transport edges, graph validation, and SVG city map
+- `citizen-planning`: activity/plan validation, time formatting, and preset commuter profiles
+- `aftershock`: timed connection delay and service closure rules + controls
+- `temporal-simulation`: earliest-arrival FIFO routing, multi-stop simulation, journey list, and timeline
+- `resync`: bounded permutation/subset recovery search, ranking, and distinct physical route discovery
+- `scenario-management`: versioned Zod-validated `localStorage` persistence and Zustand scenario store
 
-| Feature                                                       | Status                              | Notes                                                                                             |
-| ------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
-| City map, transport graph, service hours                      | Implemented but requires correction | Selectable SVG, graph validation, routes, access and people layers.                               |
-| Profiles, obligation CRUD, priorities, deadlines, fixed order | Implemented but requires correction | Per-profile plans and validation; editor needs complete dialog focus management.                  |
-| Multi-stop baseline, disruption, cascading conflicts          | Implemented but requires correction | Deterministic one-day engine; one edge delay and one closure.                                     |
-| Recovery, partial recovery, alternative routes, comparisons   | Implemented but requires correction | Bounded six-obligation search; no explicit unreachable/deferred reason taxonomy.                  |
-| Playback and focus preservation                               | Implemented but requires correction | Shared clock drives the map marker and timeline; focus regression test passes.                    |
-| Accepted itinerary and calendar export                        | Partially implemented               | Acceptance persists by activity order; route selection and travel events do not persist to ICS.   |
-| Scenario export                                               | Partially implemented               | JSON export exists; import does not.                                                              |
-| Population metrics and budget optimization                    | Implemented but requires correction | Computed from 60 synthetic residents and four illustrative policies.                              |
-| Responsive layout and accessibility                           | Partially implemented               | Semantic navigation, focus indicators, labels; further WCAG testing and dialog focus work remain. |
-| Real-time transport, bookings, authentication                 | Deferred to future scope            | Outside this frontend-only model.                                                                 |
+See the [architecture overview](docs/architecture/overview.md) for ownership, dependency rules, and model assumptions.
 
 ## Limitations
 
-Simulation uses fictional data and local minute-of-day time, with no congestion, capacity, date-specific schedules, real policy prices, or forecasts. The old prototype source is retained in `legacy/`; old Node and Python smoke tests are references and are not part of the new test command. More feature coverage is required. See the [architecture overview](docs/architecture/overview.md) for exact assumptions.
+Simulation uses fictional data and local minute-of-day time, with up to six activities per plan, one timed connection delay, and one modeled-day service closure. It does not model transit capacity, congestion, real schedules, or multi-day calendars.

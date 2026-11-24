@@ -1,12 +1,12 @@
-﻿import { useState } from 'react';
-import { city as defaultCity } from '../infrastructure/dataset';
+import { useState } from 'react';
+import { city } from '../infrastructure/dataset';
 import type { City, Place } from '../public-contracts';
 import type { Result } from '../../temporal-simulation/public-contracts';
 import type { Incident } from '../../aftershock/public-contracts';
 import { calm, edgeTime } from '../../aftershock/public-api';
 import { usePlaybackClock } from '../../../shared/ui/playbackClock';
 
-type Layer = 'routes' | 'access' | 'people';
+type Layer = 'routes' | 'access';
 type Selection = { kind: 'place' | 'edge'; id: string } | null;
 const place = (city: City, id: string) => city.places.find((item) => item.id === id)!;
 const time = (minutes: number) =>
@@ -81,13 +81,19 @@ function TransportLayer({
   select: (value: Selection) => void;
   hero: boolean;
 }) {
-  const used = new Set(hero ? ['west-central','central-hall','hall-child','work-park','park-child','child-pharmacy'] : result.steps.flatMap((step) => step.path?.edges ?? []));
+  const used = new Set(
+    hero
+      ? ['west-central', 'central-hall', 'hall-child', 'work-park', 'park-child', 'child-pharmacy']
+      : result.steps.flatMap((step) => step.path?.edges ?? []),
+  );
   return (
     <g>
       {city.edges.map((edge) => {
         const a = place(city, edge.a),
           b = place(city, edge.b);
-        const affected = hero ? edge.id === 'central-hall' : incident.delay > 0 && edge.id === incident.edge;
+        const affected = hero
+          ? edge.id === 'central-hall'
+          : incident.delay > 0 && edge.id === incident.edge;
         const active = used.has(edge.id);
         return (
           <g
@@ -123,15 +129,7 @@ function TransportLayer({
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke={
-                affected
-                  ? '#d94b39'
-                  : active
-                    ? '#087e6b'
-                    : edge.id === 'shuttle'
-                      ? '#7951ae'
-                      : '#a4afa7'
-              }
+              stroke={affected ? '#d94b39' : active ? '#087e6b' : '#a4afa7'}
               strokeWidth={active || affected ? 4.7 : 2.4}
               strokeLinecap="round"
               strokeDasharray={affected ? '8 5' : active ? undefined : '2 6'}
@@ -176,13 +174,14 @@ function LocationLayer({
       {city.places.map((item) => {
         const active = result.steps.some((step) => step.activity.place === item.id);
         const isOpen =
-          item.open === 0 ||
-          (clock >= item.open && clock < item.close && incident.closure !== item.id);
+          incident.closure !== item.id &&
+          (item.open === 0 || (clock >= item.open && clock < item.close));
+        const showAccess = layer === 'access' && (item.open > 0 || incident.closure === item.id);
         const color =
           conflicts.has(item.id) || (layer === 'access' && !isOpen) ? '#d94b39' : '#087e6b';
         return (
           <g key={item.id}>
-            {layer === 'access' && item.open > 0 && (
+            {showAccess && (
               <circle
                 cx={item.x}
                 cy={item.y}
@@ -222,7 +221,7 @@ function LocationLayer({
                   {item.name}
                 </text>
                 <text y="24" textAnchor="middle" fontSize="9" fill="#52675d">
-                  {layer === 'access' && item.open > 0
+                  {showAccess
                     ? isOpen
                       ? `Open · ${time(item.close)}`
                       : 'Closed'
@@ -268,26 +267,17 @@ function CitizenLayer({
   city,
   result,
   incident,
-  layer,
-  residents,
 }: {
   city: City;
   result: Result;
   incident: Incident;
-  layer: Layer;
-  residents: Result[];
 }) {
   const clock = usePlaybackClock((state) => state.time);
   const point = citizenPosition(city, result, clock, incident);
-  if (!point && (layer !== 'people' || residents.length === 0)) return null;
+  if (!point) return null;
   return (
     <g pointerEvents="none" className={'citizen'}>
-      {layer === 'people' &&
-        residents.map((resident, index) => {
-          const location = citizenPosition(city, resident, clock, incident);
-          return location && <circle key={index} cx={location.x + ((index % 5) - 2) * 4} cy={location.y + ((index % 7) - 3) * 3} r="4.5" fill={['#087e6b', '#7951ae', '#e07b4f'][index % 3]} stroke="#263e38" strokeWidth=".8" />;
-        })}
-      {point && <circle cx={point.x} cy={point.y} r="9" fill="#1a3430" stroke="#fff" strokeWidth="3" />}
+      <circle cx={point.x} cy={point.y} r="9" fill="#1a3430" stroke="#fff" strokeWidth="3" />
     </g>
   );
 }
@@ -303,19 +293,14 @@ export function CityMap({
   incident = calm,
   onSelectEdge,
   hero = false,
-  cityData = defaultCity,
-  residentResults = [],
 }: {
   result: Result;
   incident?: Incident;
   onSelectEdge?: (id: string) => void;
   hero?: boolean;
-  cityData?: City;
-  residentResults?: Result[];
 }) {
-  const city = cityData;
   const [selected, setSelected] = useState<Selection>(null);
-  const [layer, setLayer] = useState<Layer>(cityData === defaultCity ? 'routes' : 'people');
+  const [layer, setLayer] = useState<Layer>('routes');
   const selectedEdge =
     selected?.kind === 'edge' ? city.edges.find((edge) => edge.id === selected.id) : undefined;
   const selectedPlace =
@@ -329,68 +314,74 @@ export function CityMap({
         <div className={'panel-heading'}>
           <div>
             <div className="kicker">ACHRONA / SYNTHETIC DISTRICT</div>
-            <h2>{cityData === defaultCity ? 'Your route in the city' : 'City activity'}</h2>
+            <h2>Your route in the city</h2>
           </div>
           <div className={'segmented'} aria-label="Map layer">
-            {(['routes', 'access', 'people'] as const).map((value) => (
+            {(['routes', 'access'] as const).map((value) => (
               <button
                 key={value}
                 type="button"
                 aria-pressed={layer === value}
                 onClick={() => setLayer(value)}
               >
-                {value === 'routes' ? 'Network' : value === 'access' ? 'Open hours' : 'Residents'}
+                {value === 'routes' ? 'Network' : 'Open hours'}
               </button>
             ))}
           </div>
         </div>
       )}
-      <div className="map-wrap"><svg
-        viewBox="0 0 930 545"
-        role={hero ? 'img' : 'group'}
-        aria-label="Illustrated Achrona city with districts, river, services and transport"
-        className={hero ? 'city-map hero-map' : 'city-map'}
-      >
-        <defs>
-          <pattern id="papergrid" width="35" height="35" patternUnits="userSpaceOnUse">
-            <path d="M35 0H0V35" fill="none" stroke="#a8b5a8" strokeWidth=".6" opacity=".35" />
-          </pattern>
-          <filter id="mapshadow">
-            <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity=".15" />
-          </filter>
-        </defs>
-        <CityGround />
-        <TransportLayer
-          city={city}
-          result={result}
-          incident={incident}
-          select={setSelected}
-          hero={hero}
-        />
-        <LocationLayer
-          city={city}
-          result={result}
-          incident={incident}
-          layer={layer}
-          select={setSelected}
-          hero={hero}
-        />
-        {!hero && <CitizenLayer city={city} result={result} incident={incident} layer={layer} residents={residentResults} />}
-        <g transform="translate(892,25)">
-          <path d="M0 24 8 0 16 24 8 18z" fill="#52675d" />
-          <text x="8" y="37" fontSize="9" textAnchor="middle" fill="#52675d">
-            N
-          </text>
-        </g>
-      </svg>
+      <div className="map-wrap">
+        <svg
+          viewBox="0 0 930 545"
+          role={hero ? 'img' : 'group'}
+          aria-label="Illustrated Achrona city with districts, river, services and transport"
+          className={hero ? 'city-map hero-map' : 'city-map'}
+        >
+          <defs>
+            <pattern id="papergrid" width="35" height="35" patternUnits="userSpaceOnUse">
+              <path d="M35 0H0V35" fill="none" stroke="#a8b5a8" strokeWidth=".6" opacity=".35" />
+            </pattern>
+            <filter id="mapshadow">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity=".15" />
+            </filter>
+          </defs>
+          <CityGround />
+          <TransportLayer
+            city={city}
+            result={result}
+            incident={incident}
+            select={setSelected}
+            hero={hero}
+          />
+          <LocationLayer
+            city={city}
+            result={result}
+            incident={incident}
+            layer={layer}
+            select={setSelected}
+            hero={hero}
+          />
+          {!hero && <CitizenLayer city={city} result={result} incident={incident} />}
+          <g transform="translate(892,25)">
+            <path d="M0 24 8 0 16 24 8 18z" fill="#52675d" />
+            <text x="8" y="37" fontSize="9" textAnchor="middle" fill="#52675d">
+              N
+            </text>
+          </g>
+        </svg>
+        {!hero && (
+          <>
+            <div className="map-caption">
+              <i />
+              Selected journey
+              <i className="red-dot" />
+              Disruption
+            </div>
+          </>
+        )}
+      </div>
       {!hero && (
         <>
-          <div className="map-caption"><i/>{cityData === defaultCity ? 'Selected journey' : 'City network · purple = added shuttle'}<i className="red-dot"/>Disruption
-          </div>
-        </>
-      )}
-      </div>
-      {!hero && (<>
           <div className={'map-inspector'} aria-live="polite">
             {selectedEdge ? (
               <>
@@ -404,7 +395,11 @@ export function CityMap({
                     : ''}
                 </span>
                 {onSelectEdge && (
-                  <button className="btn small" type="button" onClick={() => onSelectEdge(selectedEdge.id)}>
+                  <button
+                    className="btn small"
+                    type="button"
+                    onClick={() => onSelectEdge(selectedEdge.id)}
+                  >
                     Disrupt this link
                   </button>
                 )}
@@ -417,13 +412,13 @@ export function CityMap({
                   {selectedPlace.open
                     ? `${time(selectedPlace.open)}–${time(selectedPlace.close)}`
                     : 'Always accessible'}{' '}
-                  ·{' '}
-                  <LocationStatus place={selectedPlace} incident={incident} />
+                  · <LocationStatus place={selectedPlace} incident={incident} />
                 </span>
               </>
             ) : (
               <span>
-                Click a location or connection to inspect it. Playback does not change your selection.
+                Click a location or connection to inspect it. Playback does not change your
+                selection.
               </span>
             )}
           </div>
@@ -432,4 +427,3 @@ export function CityMap({
     </section>
   );
 }
-

@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { city, validateCity } from '../../src/contexts/city-network/public-api';
-import { profiles, validateActivity } from '../../src/contexts/citizen-planning/public-api';
+import {
+  minutesToTime,
+  profiles,
+  validateActivity,
+} from '../../src/contexts/citizen-planning/public-api';
 import { calm, defaultIncident, edgeTime } from '../../src/contexts/aftershock/public-api';
 import { route } from '../../src/contexts/temporal-simulation/public-contracts';
 import { simulate } from '../../src/contexts/temporal-simulation/public-api';
 import { alternatives, journeyAlternatives } from '../../src/contexts/resync/public-api';
-import {
-  blankPolicy,
-  network,
-  optimize,
-  policyCost,
-  population,
-} from '../../src/contexts/urban-intelligence/public-api';
 
 const plan = profiles[0].plan;
 describe('city and planning invariants', () => {
@@ -75,7 +72,7 @@ describe('time dependent simulation', () => {
     expect(simulate(city, plan, defaultIncident)).toEqual(simulate(city, plan, defaultIncident)));
 });
 
-describe('recovery and city policy', () => {
+describe('recovery engine', () => {
   it('preserves deferred obligations under closure', () => {
     const result = alternatives(city, plan, { ...defaultIncident, closure: 'hall' })[0];
     expect(result.all).toBe(false);
@@ -95,11 +92,16 @@ describe('recovery and city policy', () => {
     expect(new Set(signatures).size).toBe(results.length);
     expect(results.length).toBeGreaterThan(1);
   });
-  it('computes policy from the same population and respects budget', () => {
-    const baseline = population(defaultIncident, blankPolicy);
-    const chosen = optimize(defaultIncident, 3, 'equity');
-    expect(baseline.rows).toHaveLength(60);
-    expect(policyCost(chosen)).toBeLessThanOrEqual(3);
-    expect(network({ ...blankPolicy, shuttle: true }).edges).toHaveLength(city.edges.length + 1);
+  it('recovers a disrupted baseline journey completely', () => {
+    const base = simulate(city, plan, calm);
+    const disrupted = simulate(city, plan, defaultIncident, undefined, base);
+    expect(disrupted.all).toBe(false);
+    const results = journeyAlternatives(city, plan, defaultIncident);
+    expect(results[0].all).toBe(true);
+    expect(results[0].completed).toBe(plan.activities.length);
+  });
+  it('rounds fractional minutes in minutesToTime', () => {
+    expect(minutesToTime(995.5)).toBe('16:36');
+    expect(minutesToTime(1000.2)).toBe('16:40');
   });
 });
