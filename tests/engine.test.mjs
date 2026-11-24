@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {evaluate,recover,shortest,noDisruption,validateActivity} from '../dist/js/engine.js';import {city,profiles} from '../dist/js/data.js';
+const plan=profiles[0].plan;const disruption={edge:'central-hall',delay:30};
+test('baseline meets all deadlines',()=>{const r=evaluate(city,plan,noDisruption);assert.equal(r.completed,3);assert.equal(r.steps[0].arrive,980);assert.equal(r.steps[1].arrive,1020);});
+test('locked original route propagates delay',()=>{const baseline=evaluate(city,plan,noDisruption);const r=evaluate(city,plan,disruption,undefined,baseline);assert.equal(r.steps[0].arrive,1010);assert.equal(r.steps[0].valid,false);assert.equal(r.steps[1].valid,false);assert.equal(r.steps[1].projected,true);});
+test('Re-Sync finds valid alternative without silently dropping activities',()=>{const r=recover(city,plan,disruption)[0];assert.equal(r.all,true);assert.equal(r.completed,3);assert.equal(r.essential,2);assert.equal(r.omitted.length,0);assert.ok(r.steps.every(s=>s.valid));});
+test('alternative avoids the delayed connection',()=>{const p=shortest(city,'work','hall',disruption);assert.equal(p.minutes,30);assert.ok(!p.edges.includes('central-hall'));});
+test('closure returns partial recovery with explicit deferred activities',()=>{const r=recover(city,plan,{...disruption,closedPlace:'hall'})[0];assert.equal(r.all,false);assert.ok(r.omitted.some(a=>a.id==='hall'));assert.ok(r.steps.every(s=>s.valid));});
+test('fixed order is preserved',()=>{const p=structuredClone(plan);p.activities[0].fixedOrder=true;for(const r of recover(city,p,disruption)){if(r.order.includes('hall'))assert.equal(r.order[0],'hall');}});
+test('invalid duration is rejected',()=>{assert.ok(validateActivity({...plan.activities[0],duration:0},city));});
+test('empty plan has no recovery candidates',()=>assert.deepEqual(recover(city,{...plan,activities:[]},disruption),[]));
+test('waiting is accounted for',()=>{const p=structuredClone(plan);p.activities=p.activities.slice(0,1);p.activities[0].earliest=995;const r=evaluate(city,p,noDisruption);assert.equal(r.steps[0].wait,15);assert.equal(r.steps[0].finish,1015);});

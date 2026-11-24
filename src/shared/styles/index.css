@@ -1,0 +1,91 @@
+:root {
+  color-scheme: light;
+  --background: #f6f5ef;
+  --surface: #fffefa;
+  --text: #172d2a;
+  --muted: #566d68;
+  --accent: #087e6b;
+  --accent-dark: #075b4e;
+  --border: #d6dfd9;
+  --danger: #a23e39;
+  --success: #176e54;
+  --map: #eaf2ed;
+  --map-edge: #9bb2a9;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius: 0.75rem;
+  font-family: Inter, system-ui, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  line-height: 1.5;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+select,
+input {
+  min-height: 2.75rem;
+}
+button {
+  cursor: pointer;
+  padding: var(--space-2) var(--space-4);
+  border: 0.0625rem solid var(--accent);
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: white;
+}
+button:hover {
+  background: var(--accent-dark);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+input,
+select {
+  padding: var(--space-2);
+  border: 0.0625rem solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  color: var(--text);
+}
+:focus-visible {
+  outline: 0.2rem solid #e5944c;
+  outline-offset: 0.15rem;
+}
+a {
+  color: var(--accent-dark);
+}
+h1,
+h2,
+h3,
+p {
+  margin-block-start: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

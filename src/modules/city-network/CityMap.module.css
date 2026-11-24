@@ -1,0 +1,33 @@
+.wrapper {
+  background: var(--surface);
+  border: 0.0625rem solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--map);
+  border-radius: var(--radius);
+}
+.edge {
+  stroke: var(--map-edge);
+  stroke-width: 4;
+}
+.used {
+  stroke: var(--accent);
+  stroke-width: 6;
+}
+.place {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 3;
+}
+.label {
+  fill: var(--text);
+  font: 600 1rem system-ui;
+}
+.wrapper p {
+  margin-block: var(--space-3) 0;
+}
