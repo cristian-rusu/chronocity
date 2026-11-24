@@ -31,9 +31,10 @@ const steps = [
 ] as const;
 
 export function HomePage() {
-  const { base } = useJourney();
+  const { plan, base, candidates } = useJourney();
   const updateIncident = useScenario((state) => state.updateIncident);
   const navigate = useNavigate();
+  const heroResult = candidates[0] ?? base;
 
   return (
     <>
@@ -71,7 +72,12 @@ export function HomePage() {
         </div>
 
         <div className="hero-art">
-          <CityMap result={base} incident={defaultIncident} hero />
+          <CityMap
+            result={heroResult}
+            incident={defaultIncident}
+            startPlaceId={plan.startPlace}
+            hero
+          />
           <div className="float-card float-top">
             <small className="kicker">DISRUPTION</small>
             <strong>+30 min</strong>

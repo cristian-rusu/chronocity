@@ -110,11 +110,7 @@ function TransportLayer({
   onHover: (value: Selection) => void;
   hero: boolean;
 }) {
-  const used = new Set(
-    hero
-      ? ['west-central', 'central-hall', 'hall-child', 'work-park', 'park-child', 'child-pharmacy']
-      : result.steps.flatMap((step) => step.path?.edges ?? []),
-  );
+  const used = new Set(result.steps.flatMap((step) => step.path?.edges ?? []));
 
   const highlightedEdges = new Set(
     highlightedPlaceId
@@ -217,7 +213,7 @@ function TransportLayer({
             />
 
             {/* Subtle luminous flow overlay on active non-disrupted route */}
-            {active && !affected && !hero && (
+            {active && !affected && (
               <line
                 x1={a.x}
                 y1={a.y}
@@ -246,7 +242,7 @@ function TransportLayer({
             )}
 
             {/* Compact mode + travel-time pill on active or hovered links */}
-            {!hero && !affected && (active || emphasized) && (
+            {!affected && (active || emphasized) && (
               <g transform={`translate(${mx},${my})`} pointerEvents="none" filter="url(#pillshadow)">
                 <rect
                   x="-34"
@@ -321,7 +317,7 @@ function LocationLayer({
       {city.places.map((item) => {
         const numbers = stopNumbers.get(item.id) ?? [];
         const isScheduled = numbers.length > 0;
-        const isStart = !hero && inferredStart === item.id;
+        const isStart = inferredStart === item.id;
         const isOpen =
           item.open === 0 ||
           (clock >= item.open && clock < item.close && incident.closure !== item.id);
@@ -413,7 +409,7 @@ function LocationLayer({
               />
 
               {/* Inner node core or stop number */}
-              {!hero && isScheduled ? (
+              {isScheduled ? (
                 <>
                   <circle cx={item.x} cy={item.y} r="11" fill={color} />
                   <text
@@ -427,17 +423,17 @@ function LocationLayer({
                     {numbers[0]}
                   </text>
                 </>
-              ) : !hero && isStart ? (
+              ) : isStart ? (
                 <>
                   <circle cx={item.x} cy={item.y} r="9.5" fill="#153b31" />
                   <circle cx={item.x} cy={item.y} r="3.5" fill="#cbf7ac" />
                 </>
               ) : (
-                <circle cx={item.x} cy={item.y} r={isScheduled ? 7 : 4.2} fill={color} />
+                <circle cx={item.x} cy={item.y} r="4.2" fill={color} />
               )}
 
               {/* Origin pill above start node */}
-              {!hero && isStart && !isScheduled && (
+              {isStart && !isScheduled && (
                 <g transform={`translate(${item.x},${item.y - 26})`} pointerEvents="none">
                   <rect x="-24" y="-9" width="48" height="17" rx="8.5" fill="#153b31" />
                   <text

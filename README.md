@@ -1,5 +1,7 @@
 # ChronoCity
 
+**Live demo:** https://chronocity.netlify.app/
+
 ChronoCity is a static urban time planning demo. A citizen plans obligations in a fictional city, tests a timed transport disruption or service closure, compares recovery routes, and explores municipal interventions across 60 synthetic residents. No accounts, backend, or real travel data are used.
 
 ## Develop
