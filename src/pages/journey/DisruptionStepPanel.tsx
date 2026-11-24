@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { OriginalIcon } from '../../shared/ui/OriginalIcon';
 import { city } from '../../contexts/city-network/public-api';
 import {
@@ -32,6 +32,11 @@ export function DisruptionStepPanel({
   onBackToPlan: () => void;
   onFindRecovery: () => void;
 }) {
+  const id = useId();
+  const edgeId = `${id}-edge`;
+  const startId = `${id}-start`;
+  const endId = `${id}-end`;
+  const closureId = `${id}-closure`;
   const [showAdvanced, setShowAdvanced] = useState(false);
   const conflicts = disrupted.steps.filter((step) => !step.valid);
   const projectedFollowups = disrupted.steps.filter((step) => step.valid && step.projected);
@@ -50,9 +55,10 @@ export function DisruptionStepPanel({
       </div>
 
       <div className="panel-body">
-        <label>
+        <label htmlFor={edgeId}>
           Affected transport link
           <select
+            id={edgeId}
             value={incident.edge}
             onChange={(event) => onChangeIncident({ ...incident, edge: event.target.value })}
           >
@@ -64,20 +70,22 @@ export function DisruptionStepPanel({
           </select>
         </label>
 
-        <label>Delay on this link</label>
-        <div className="delay-options" aria-label="Delay presets">
-          {[0, 15, 30, 60].map((minutes) => (
-            <button
-              type="button"
-              key={minutes}
-              data-value={minutes}
-              aria-pressed={incident.delay === minutes}
-              onClick={() => onChangeIncident({ ...incident, delay: minutes })}
-            >
-              {minutes ? `+${minutes}m` : 'None'}
-            </button>
-          ))}
-        </div>
+        <fieldset className="delay-fieldset">
+          <legend>Delay on this link</legend>
+          <div className="delay-options">
+            {[0, 15, 30, 60].map((minutes) => (
+              <button
+                type="button"
+                key={minutes}
+                data-value={minutes}
+                aria-pressed={incident.delay === minutes}
+                onClick={() => onChangeIncident({ ...incident, delay: minutes })}
+              >
+                {minutes ? `+${minutes}m` : 'None'}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <button
           type="button"
@@ -92,9 +100,10 @@ export function DisruptionStepPanel({
         {showAdvanced && (
           <div className={styles.disclosurePanel}>
             <div className="field-pair">
-              <label>
+              <label htmlFor={startId}>
                 Disruption starts
                 <input
+                  id={startId}
                   type="time"
                   value={minutesToTime(incident.start)}
                   onChange={(event) => {
@@ -103,9 +112,10 @@ export function DisruptionStepPanel({
                   }}
                 />
               </label>
-              <label>
+              <label htmlFor={endId}>
                 Disruption ends
                 <input
+                  id={endId}
                   type="time"
                   value={minutesToTime(incident.end)}
                   onChange={(event) => {
@@ -115,9 +125,10 @@ export function DisruptionStepPanel({
                 />
               </label>
             </div>
-            <label>
+            <label htmlFor={closureId}>
               Unexpected service closure
               <select
+                id={closureId}
                 value={incident.closure}
                 onChange={(event) => onChangeIncident({ ...incident, closure: event.target.value })}
               >

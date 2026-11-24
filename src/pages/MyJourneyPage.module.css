@@ -320,8 +320,17 @@
   color: var(--muted);
 }
 
-.interactiveActivity {
-  cursor: pointer;
+.activitySelectBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
 }
 
 .interactiveActivitySelected {

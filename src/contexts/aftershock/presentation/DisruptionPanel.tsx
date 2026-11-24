@@ -1,4 +1,5 @@
-﻿import { city } from '../../city-network/public-api';
+import { useId } from 'react';
+import { city } from '../../city-network/public-api';
 import { minutesToTime, timeToMinutes } from '../../citizen-planning/public-contracts';
 import type { Incident } from '../public-contracts';
 import { OriginalIcon } from '../../../shared/ui/OriginalIcon';
@@ -10,13 +11,28 @@ export function DisruptionPanel({
   incident: Incident;
   onChange: (incident: Incident) => void;
 }) {
+  const id = useId();
+  const edgeId = `${id}-edge`;
+  const startId = `${id}-start`;
+  const endId = `${id}-end`;
+  const closureId = `${id}-closure`;
+
   return (
     <section className="panel incident-panel">
-      <div className="panel-heading"><div><div className="kicker coral">AFTERSHOCK / EVENT</div><h2>Introduce a disruption</h2></div><span className="event-icon"><OriginalIcon name="pulse"/></span></div>
-      <div className={'panel-body'}>
-        <label>
+      <div className="panel-heading">
+        <div>
+          <div className="kicker coral">AFTERSHOCK / EVENT</div>
+          <h2>Introduce a disruption</h2>
+        </div>
+        <span className="event-icon">
+          <OriginalIcon name="pulse" />
+        </span>
+      </div>
+      <div className="panel-body">
+        <label htmlFor={edgeId}>
           Transport connection
           <select
+            id={edgeId}
             value={incident.edge}
             onChange={(event) => update({ ...incident, edge: event.target.value })}
           >
@@ -28,61 +44,77 @@ export function DisruptionPanel({
             ))}
           </select>
         </label>
-        <label>Additional delay</label>
-        <div className={'delay-options'} aria-label="Delay presets">
-          {[0, 15, 30, 60].map((minutes) => (
-            <button
-              type="button"
-              key={minutes}
-              aria-pressed={incident.delay === minutes}
-              onClick={() => update({ ...incident, delay: minutes })}
-            >
-              {minutes ? `+${minutes}m` : 'None'}
-            </button>
-          ))}
+        <fieldset className="delay-fieldset">
+          <legend>Additional delay</legend>
+          <div className="delay-options">
+            {[0, 15, 30, 60].map((minutes) => (
+              <button
+                type="button"
+                key={minutes}
+                data-value={minutes}
+                aria-pressed={incident.delay === minutes}
+                onClick={() => update({ ...incident, delay: minutes })}
+              >
+                {minutes ? `+${minutes}m` : 'None'}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <div className="field-pair">
+          <label htmlFor={startId}>
+            Incident starts
+            <input
+              id={startId}
+              type="time"
+              value={minutesToTime(incident.start)}
+              onChange={(event) => {
+                const value = timeToMinutes(event.target.value);
+                if (value < incident.end) update({ ...incident, start: value });
+              }}
+            />
+          </label>
+          <label htmlFor={endId}>
+            Incident ends
+            <input
+              id={endId}
+              type="time"
+              value={minutesToTime(incident.end)}
+              onChange={(event) => {
+                const value = timeToMinutes(event.target.value);
+                if (value > incident.start) update({ ...incident, end: value });
+              }}
+            />
+          </label>
         </div>
-        <div className="field-pair"><label>
-          Incident starts
-          <input
-            type="time"
-            value={minutesToTime(incident.start)}
-            onChange={(event) => {
-              const value = timeToMinutes(event.target.value);
-              if (value < incident.end) update({ ...incident, start: value });
-            }}
-          />
-        </label>
-        <label>
-          Incident ends
-          <input
-            type="time"
-            value={minutesToTime(incident.end)}
-            onChange={(event) => {
-              const value = timeToMinutes(event.target.value);
-              if (value > incident.start) update({ ...incident, end: value });
-            }}
-          />
-        </label></div>
-        <label>
+        <label htmlFor={closureId}>
           Service closure
           <select
+            id={closureId}
             value={incident.closure}
             onChange={(event) => update({ ...incident, closure: event.target.value })}
           >
             <option value="">No service closure</option>
-            {city.places.filter((place) => place.open > 0).map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name}
-              </option>
-            ))}
+            {city.places
+              .filter((place) => place.open > 0)
+              .map((place) => (
+                <option key={place.id} value={place.id}>
+                  {place.name}
+                </option>
+              ))}
           </select>
         </label>
-        <p className="fine">Delay affects entries into the selected connection during the event window; a closure lasts the modeled day.</p>
-        <button type="button" className="btn secondary" onClick={() => update({ ...incident, delay: 0, closure: '' })}>
-          <OriginalIcon name="reset"/> Clear disruption
+        <p className="fine">
+          Delay affects entries into the selected connection during the event window; a closure
+          lasts the modeled day.
+        </p>
+        <button
+          type="button"
+          className="btn secondary"
+          onClick={() => update({ ...incident, delay: 0, closure: '' })}
+        >
+          <OriginalIcon name="reset" /> Clear disruption
         </button>
       </div>
     </section>
   );
 }
-

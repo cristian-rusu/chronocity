@@ -21,41 +21,13 @@ export function Journey({
       <ol className="journey-list">
         {result.steps.map((step, index) => {
           const isFocused = highlightedPlaceId === step.activity.place;
-          const interactive = Boolean(onFocusPlace);
-          return (
-            <li
-              key={step.activity.id}
-              className={
-                interactive
-                  ? `journey-step-interactive ${isFocused ? 'journey-step-focused' : ''}`
-                  : undefined
-              }
-              tabIndex={interactive ? 0 : undefined}
-              onClick={
-                interactive
-                  ? () => onFocusPlace?.(isFocused ? null : step.activity.place)
-                  : undefined
-              }
-              onMouseEnter={interactive ? () => onFocusPlace?.(step.activity.place) : undefined}
-              onMouseLeave={interactive ? () => onFocusPlace?.(null) : undefined}
-              onFocus={interactive ? () => onFocusPlace?.(step.activity.place) : undefined}
-              onBlur={interactive ? () => onFocusPlace?.(null) : undefined}
-              onKeyDown={
-                interactive
-                  ? (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        onFocusPlace?.(isFocused ? null : step.activity.place);
-                      }
-                    }
-                  : undefined
-              }
-            >
-              <div className={`step-number ${step.valid ? '' : 'conflict'}`}>
+          const stepContent = (
+            <>
+              <span className={`step-number ${step.valid ? '' : 'conflict'}`}>
                 {String(index + 1).padStart(2, '0')}
-              </div>
-              <div className="step-body">
-                <div className="step-title">
+              </span>
+              <span className="step-body">
+                <span className="step-title">
                   <strong>{step.activity.title}</strong>
                   {step.projected && step.valid ? (
                     <span className="status projected-status">Projected feasible</span>
@@ -65,22 +37,46 @@ export function Journey({
                       {step.valid ? 'Feasible' : 'Conflict'}
                     </span>
                   )}
-                </div>
-                <div className="step-meta">
+                </span>
+                <span className="step-meta">
                   {name(step.activity.place)} · {minutesToTime(step.arrive)} arrival ·{' '}
                   {minutesToTime(step.start)}–{minutesToTime(step.finish)}
-                </div>
-                <div className="step-meta">
+                </span>
+                <span className="step-meta">
                   {step.path
                     ? `${step.path.minutes} min travel · ${step.path.nodes.map(name).join(' → ')}`
                     : 'No connected route'}
                   {step.wait ? ` · ${step.wait} min waiting` : ''}
-                </div>
-                {step.reason && <p className="reason">{step.reason}</p>}
+                </span>
+                {step.reason && <span className="reason">{step.reason}</span>}
                 {step.projected && (
-                  <p className="fine">Hypothetical timing after an earlier conflict.</p>
+                  <span className="fine">Hypothetical timing after an earlier conflict.</span>
                 )}
-              </div>
+              </span>
+            </>
+          );
+
+          return (
+            <li
+              key={step.activity.id}
+              className={onFocusPlace ? 'journey-step-item' : undefined}
+            >
+              {onFocusPlace ? (
+                <button
+                  type="button"
+                  className={`journey-step-btn ${isFocused ? 'journey-step-focused' : ''}`}
+                  aria-pressed={isFocused}
+                  onClick={() => onFocusPlace(isFocused ? null : step.activity.place)}
+                  onMouseEnter={() => onFocusPlace(step.activity.place)}
+                  onMouseLeave={() => onFocusPlace(null)}
+                  onFocus={() => onFocusPlace(step.activity.place)}
+                  onBlur={() => onFocusPlace(null)}
+                >
+                  {stepContent}
+                </button>
+              ) : (
+                stepContent
+              )}
             </li>
           );
         })}

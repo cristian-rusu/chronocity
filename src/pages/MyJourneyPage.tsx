@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { Playback } from '../shared/ui/Playback';
@@ -29,8 +29,7 @@ function parseStage(value: string | null, fallback: JourneyStage): JourneyStage 
 export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: JourneyStage }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const paramStep = searchParams.get('step');
-  const [stage, setStage] = useState<JourneyStage>(() => parseStage(paramStep, initialStage));
+  const stage = parseStage(searchParams.get('step'), initialStage);
   const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
   const [showPlayback, setShowPlayback] = useState(false);
   const [focusedPlaceId, setFocusedPlaceId] = useState<string | null>(null);
@@ -47,18 +46,16 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
   const updateIncident = useScenario((state) => state.updateIncident);
   const accept = useScenario((state) => state.accept);
 
-  useEffect(() => {
-    setStage(parseStage(paramStep, initialStage));
-  }, [initialStage, paramStep]);
-
   const safeCandidateIdx = selectedCandidateIdx < candidates.length ? selectedCandidateIdx : 0;
   const chosen = candidates[safeCandidateIdx] ?? candidates[0];
   const currentProfile = profiles.find((item) => item.id === profile) ?? profiles[0];
 
   const goToStage = (next: JourneyStage) => {
-    setStage(next);
     if (next === 'recovery') setSelectedCandidateIdx(0);
-    navigate(next === 'plan' ? '/my-journey' : `/my-journey?step=${next}`, { replace: true });
+    const target = next === 'plan' ? '/my-journey' : `/my-journey?step=${next}`;
+    if (next !== stage || searchParams.get('step') !== (next === 'plan' ? null : next)) {
+      navigate(target);
+    }
   };
 
   const handleSimulateDisruption = () => {

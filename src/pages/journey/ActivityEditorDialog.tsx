@@ -23,10 +23,12 @@ export function ActivityEditorDialog({
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (draft && dialog.current && !dialog.current.open) {
       dialog.current.showModal();
+      titleInput.current?.focus();
     } else if (!draft && dialog.current?.open) {
       dialog.current.close();
     }
@@ -49,7 +51,7 @@ export function ActivityEditorDialog({
             <label>
               Activity name
               <input
-                autoFocus
+                ref={titleInput}
                 required
                 maxLength={80}
                 value={draft.title}

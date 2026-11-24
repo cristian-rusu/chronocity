@@ -149,54 +149,51 @@ export function PlanStepPanel({
               return (
                 <div
                   key={activity.id}
-                  className={`activity ${styles.interactiveActivity} ${isFocused ? styles.interactiveActivitySelected : ''}`}
-                  tabIndex={0}
-                  onMouseEnter={() => onFocusPlace(activity.place)}
-                  onMouseLeave={() => onFocusPlace(null)}
-                  onFocus={() => onFocusPlace(activity.place)}
-                  onClick={() => onFocusPlace(isFocused ? null : activity.place)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onFocusPlace(isFocused ? null : activity.place);
-                    }
-                  }}
+                  className={`activity ${isFocused ? styles.interactiveActivitySelected : ''}`}
                 >
-                  <div className={`step-number ${step && !step.valid ? 'conflict' : ''}`}>
-                    {index + 1}
-                  </div>
-                  <div className="activity-body">
-                    <strong>{activity.title}</strong>
-                    <small>
-                      {placeName(activity.place)} · {activity.duration} min ·{' '}
-                      {activity.deadlineType === 'arrival' ? 'arrive' : 'finish'} by{' '}
-                      {minutesToTime(activity.deadline)}
-                    </small>
-                    {step && (
-                      <div className={styles.activityMetaLine}>
-                        <span className={step.valid ? styles.feasibleChip : styles.conflictChip}>
-                          {minutesToTime(step.start)}–{minutesToTime(step.finish)}
-                        </span>
-                        {step.path && <span>{step.path.minutes}m travel</span>}
-                        {step.reason && <span className={styles.conflictChip}>{step.reason}</span>}
-                      </div>
-                    )}
-                    <div className="activity-tags">
-                      <span
-                        className={`tag ${activity.priority === 'essential' ? 'essential' : ''}`}
-                      >
-                        {activity.priority}
-                      </span>
-                      {activity.fixedOrder && <span className="tag">Order locked</span>}
-                      {activity.earliest > 0 && (
-                        <span className="tag">After {minutesToTime(activity.earliest)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    className="activity-actions"
-                    onClick={(event) => event.stopPropagation()}
+                  <button
+                    type="button"
+                    className={styles.activitySelectBtn}
+                    aria-pressed={isFocused}
+                    onMouseEnter={() => onFocusPlace(activity.place)}
+                    onMouseLeave={() => onFocusPlace(null)}
+                    onFocus={() => onFocusPlace(activity.place)}
+                    onBlur={() => onFocusPlace(null)}
+                    onClick={() => onFocusPlace(isFocused ? null : activity.place)}
                   >
+                    <span className={`step-number ${step && !step.valid ? 'conflict' : ''}`}>
+                      {index + 1}
+                    </span>
+                    <span className="activity-body">
+                      <strong>{activity.title}</strong>
+                      <small>
+                        {placeName(activity.place)} · {activity.duration} min ·{' '}
+                        {activity.deadlineType === 'arrival' ? 'arrive' : 'finish'} by{' '}
+                        {minutesToTime(activity.deadline)}
+                      </small>
+                      {step && (
+                        <span className={styles.activityMetaLine}>
+                          <span className={step.valid ? styles.feasibleChip : styles.conflictChip}>
+                            {minutesToTime(step.start)}–{minutesToTime(step.finish)}
+                          </span>
+                          {step.path && <span>{step.path.minutes}m travel</span>}
+                          {step.reason && <span className={styles.conflictChip}>{step.reason}</span>}
+                        </span>
+                      )}
+                      <span className="activity-tags">
+                        <span
+                          className={`tag ${activity.priority === 'essential' ? 'essential' : ''}`}
+                        >
+                          {activity.priority}
+                        </span>
+                        {activity.fixedOrder && <span className="tag">Order locked</span>}
+                        {activity.earliest > 0 && (
+                          <span className="tag">After {minutesToTime(activity.earliest)}</span>
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                  <div className="activity-actions">
                     <button
                       type="button"
                       className="icon-btn"
