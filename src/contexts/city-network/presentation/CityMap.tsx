@@ -123,6 +123,7 @@ function TransportLayer({
               y1={a.y}
               x2={b.x}
               y2={b.y}
+              className={affected ? 'edge-disrupted' : active ? 'edge-active' : undefined}
               stroke={
                 affected
                   ? '#d94b39'
@@ -207,6 +208,18 @@ function LocationLayer({
                     }
               }
             >
+              {conflicts.has(item.id) && (
+                <circle
+                  cx={item.x}
+                  cy={item.y}
+                  r="22"
+                  fill="none"
+                  stroke="#d94b39"
+                  strokeWidth="2"
+                  className="node-conflict-pulse"
+                  pointerEvents="none"
+                />
+              )}
               <circle
                 cx={item.x}
                 cy={item.y}
