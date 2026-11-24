@@ -1,137 +1,127 @@
 import { Link } from 'react-router-dom';
-import { city } from '../modules/city-network/public-api';
-import { minutesToTime, timeToMinutes } from '../modules/citizen-planning/public-api';
-import { useScenario } from '../modules/scenario-management/public-api';
+import { useScenario } from '../contexts/scenario-management/public-api';
 import { useJourney } from '../app/model';
-import { Journey } from '../modules/temporal-simulation/public-api';
-import { CityMap } from '../modules/city-network/public-api';
+import { Journey, Timeline } from '../contexts/temporal-simulation/presentation/public-api';
+import { CityMap } from '../contexts/city-network/presentation/public-api';
 import { Playback } from '../shared/ui/Playback';
+import { DisruptionPanel } from '../contexts/aftershock/presentation/public-api';
+import { minutesToTime } from '../contexts/citizen-planning/public-api';
 import styles from './Page.module.css';
 
 export function AftershockPage() {
-  const { plan, base, disrupted } = useJourney();
+  const { plan, base, disrupted, candidates } = useJourney();
   const incident = useScenario((state) => state.incident);
   const update = useScenario((state) => state.updateIncident);
+  const affected = disrupted.steps.filter((step) => !step.valid);
   return (
     <>
       <section className={styles.intro}>
         <span className={styles.kicker}>02 / Aftershock</span>
         <h1>What if the city changes?</h1>
         <p>
-          Introduce a transport delay or service closure and trace the effects through your day.
+          Introduce an interruption, see how your original journey changes, and understand which
+          deadlines are at risk.
         </p>
+        <Link className={styles.pageAction} to="/resync">
+          Find recovery plans →
+        </Link>
       </section>
-      <div className={styles.grid}>
-        <section className={styles.card}>
-          <h2>Disruption</h2>
-          <div className={styles.fields}>
-            <label>
-              Connection
-              <select
-                value={incident.edge}
-                onChange={(event) => update({ ...incident, edge: event.target.value })}
-              >
-                {city.edges.map((edge) => (
-                  <option key={edge.id} value={edge.id}>
-                    {city.places.find((place) => place.id === edge.a)?.name} →{' '}
-                    {city.places.find((place) => place.id === edge.b)?.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Delay (minutes)
-              <input
-                type="number"
-                min="0"
-                max="180"
-                value={incident.delay}
-                onChange={(event) =>
-                  update({ ...incident, delay: Math.max(0, Number(event.target.value)) })
-                }
-              />
-            </label>
-            <label>
-              Starts
-              <input
-                type="time"
-                value={minutesToTime(incident.start)}
-                onChange={(event) => {
-                  const value = timeToMinutes(event.target.value);
-                  if (value < incident.end) update({ ...incident, start: value });
-                }}
-              />
-            </label>
-            <label>
-              Ends
-              <input
-                type="time"
-                value={minutesToTime(incident.end)}
-                onChange={(event) => {
-                  const value = timeToMinutes(event.target.value);
-                  if (value > incident.start) update({ ...incident, end: value });
-                }}
-              />
-            </label>
-            <label>
-              Service closure
-              <select
-                value={incident.closure}
-                onChange={(event) => update({ ...incident, closure: event.target.value })}
-              >
-                <option value="">None</option>
-                {city.places.map((place) => (
-                  <option key={place.id} value={place.id}>
-                    {place.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="button" onClick={() => update({ ...incident, delay: 0, closure: '' })}>
-              Clear disruption
-            </button>
-          </div>
-        </section>
+      <div className={styles.metrics}>
         <div>
-          <CityMap result={disrupted} onSelectEdge={(edge) => update({ ...incident, edge })} />
-          <p className={styles.muted}>
-            Select a connection on the map, then use the button to target it.
-          </p>
-        </div>
-      </div>
-      <div className={styles.cards}>
-        <div className={styles.card}>
-          <h2>Original</h2>
-          <strong className={styles.stat}>
+          <span>Original plan</span>
+          <strong>
             {base.completed}/{plan.activities.length}
           </strong>
-          <p>Confirmed obligations</p>
+          <small>Feasible obligations</small>
         </div>
-        <div className={styles.card}>
-          <h2>Aftershock</h2>
-          <strong className={styles.stat}>
+        <div className={affected.length ? styles.metricAlert : ''}>
+          <span>Aftershock</span>
+          <strong>
             {disrupted.completed}/{plan.activities.length}
           </strong>
-          <p>Confirmed obligations · {disrupted.travel - base.travel} additional travel minutes</p>
+          <small>Confirmed obligations</small>
+        </div>
+        <div className={affected.length ? styles.metricAlert : ''}>
+          <span>Conflicts</span>
+          <strong>{affected.length}</strong>
+          <small>Service or deadline violations</small>
+        </div>
+        <div>
+          <span>Extra travel</span>
+          <strong>{Math.max(0, disrupted.travel - base.travel)}m</strong>
+          <small>On the original route</small>
         </div>
       </div>
-      <Playback
-        start={plan.startTime}
-        end={Math.max(plan.startTime + 1, disrupted.finish, base.finish)}
-      />
-      <div className={styles.grid}>
-        <section>
-          <h2>Original timeline</h2>
-          <Journey result={base} />
-        </section>
-        <section>
-          <h2>Disrupted timeline</h2>
-          <Journey result={disrupted} />
-        </section>
+      <div className={styles.simulationGrid}>
+        <div className={styles.stack}>
+          <CityMap
+            result={disrupted}
+            incident={incident}
+            onSelectEdge={(edge) => update({ ...incident, edge })}
+          />
+          <Playback
+            start={plan.startTime}
+            end={Math.max(plan.startTime + 1, disrupted.finish, base.finish)}
+          />
+          <section className={styles.card}>
+            <span className={styles.kicker}>TEMPORAL X-RAY</span>
+            <h2>One disruption. A chain of consequences.</h2>
+            <Timeline
+              start={plan.startTime}
+              rows={[
+                { label: 'Original', result: base },
+                { label: 'Aftershock', result: disrupted },
+                ...(candidates[0] ? [{ label: 'Re-Sync', result: candidates[0] }] : []),
+              ]}
+            />
+            <p className={styles.muted}>
+              Aftershock follows your original route. Timing after a blocked visit is hypothetical.
+            </p>
+          </section>
+        </div>
+        <aside className={styles.stack}>
+          <DisruptionPanel incident={incident} onChange={update} />
+          <section className={styles.card}>
+            <span className={styles.kicker}>THE RIPPLE EFFECT</span>
+            <h2>What breaks?</h2>
+            {affected.length ? (
+              affected.map((step, index) => (
+                <div className={styles.impact} key={step.activity.id}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <div>
+                    <strong>{step.activity.title}</strong>
+                    <p>
+                      {step.reason === 'Service closed'
+                        ? 'This service is closed, so the visit cannot be completed.'
+                        : step.reason.includes('Deadline')
+                          ? `You arrive at ${minutesToTime(step.arrive)}, too late for this visit's deadline. ${step.reason}`
+                          : step.reason}
+                    </p>
+                    <small>
+                      Projected {minutesToTime(step.start)}–{minutesToTime(step.finish)}
+                    </small>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className={styles.success}>
+                <strong>No conflicts in this itinerary.</strong>
+                <p>
+                  Try a +30 minute delay on Central Station → City Hall to see the ripple effect.
+                </p>
+              </div>
+            )}
+            <Link className={styles.pageAction} to="/resync">
+              Find feasible alternatives →
+            </Link>
+          </section>
+        </aside>
       </div>
-      <p>
-        <Link to="/resync">Find recovery alternatives</Link>
-      </p>
+      <section className={styles.card}>
+        <span className={styles.kicker}>DETAILED ITINERARY</span>
+        <h2>Inspect the disrupted journey</h2>
+        <Journey result={disrupted} />
+      </section>
     </>
   );
 }

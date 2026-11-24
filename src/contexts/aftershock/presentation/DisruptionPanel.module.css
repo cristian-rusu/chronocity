@@ -1,0 +1,49 @@
+.card {
+  padding: var(--space-6);
+  border: 0.0625rem solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.kicker {
+  font-size: 0.7rem;
+  color: var(--danger);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+}
+.presets button {
+  font-size: 0.8rem;
+  padding: 0.5rem 0.2rem;
+  background: #f8f9f3;
+  color: var(--text);
+  border-color: var(--border);
+}
+.presets button[aria-pressed='true'] {
+  background: #fce9e2;
+  border-color: #d77c6a;
+  color: var(--danger);
+}
+.hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.card h2 {
+  margin-block-end: var(--space-2);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.fields label {
+  display: grid;
+  gap: var(--space-1);
+  font-weight: 600;
+}

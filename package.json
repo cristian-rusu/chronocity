@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests/unit",
-    "format:check": "prettier --check src tests/unit docs *.json *.ts *.js",
+    "format:check": "prettier --check src tests/unit tests/e2e *.json *.ts *.js",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "architecture:check": "node scripts/architecture-check.mjs",

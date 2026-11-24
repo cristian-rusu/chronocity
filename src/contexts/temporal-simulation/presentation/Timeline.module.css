@@ -1,0 +1,118 @@
+.timeline {
+  display: grid;
+  gap: 0.8rem;
+  overflow-x: auto;
+}
+.axis {
+  margin-left: 7.5rem;
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  display: grid;
+  grid-template-columns: 6.8rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+}
+.rowLabel strong,
+.rowLabel small {
+  display: block;
+}
+.rowLabel strong {
+  font-size: 0.8rem;
+}
+.rowLabel small {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.track {
+  height: 2.3rem;
+  border-radius: 0.4rem;
+  background: repeating-linear-gradient(
+    to right,
+    #f1f2ea 0,
+    #f1f2ea calc(25% - 0.0625rem),
+    #d9ded4 calc(25% - 0.0625rem),
+    #d9ded4 25%
+  );
+  position: relative;
+  overflow: hidden;
+}
+.segment {
+  position: absolute;
+  top: 0.32rem;
+  bottom: 0.32rem;
+  border-radius: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+.segment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline: 0.2rem;
+}
+.travel {
+  background: #b1c4e2;
+  color: #1c375c;
+}
+.wait {
+  background: #efd6a3;
+  color: #604013;
+}
+.visit {
+  background: #8dcdb6;
+  color: #123d2c;
+}
+.blocked {
+  background: #ed9987;
+  color: #642619;
+}
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.13rem;
+  background: #342657;
+  z-index: 4;
+  pointer-events: none;
+  box-shadow: 0 0 0.2rem #fff;
+}
+.legend {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-left: 7.5rem;
+}
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.legend i {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.6rem;
+  border-radius: 0.15rem;
+}
+@media (max-width: 35rem) {
+  .axis,
+  .legend {
+    margin-left: 5.2rem;
+  }
+  .row {
+    grid-template-columns: 4.5rem minmax(14rem, 1fr);
+  }
+  .rowLabel small {
+    font-size: 0.58rem;
+  }
+}

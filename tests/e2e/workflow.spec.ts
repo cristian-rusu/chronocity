@@ -13,9 +13,11 @@ test('citizen journey persists through recovery and refresh', async ({ page }) =
   await page.getByLabel('Delay (minutes)').fill('30');
   await page.goto('/resync');
   await expect(page.getByRole('heading', { name: 'Find a way forward.' })).toBeVisible();
+  page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Accept this plan' }).click();
   await page.goto('/my-day/accepted');
   await expect(page.getByRole('heading', { name: 'Your recovered itinerary.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /recovery/i })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Pick up parcel').first()).toBeVisible();
 });

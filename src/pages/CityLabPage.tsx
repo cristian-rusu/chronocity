@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
-import { useScenario } from '../modules/scenario-management/public-api';
+import { useScenario } from '../contexts/scenario-management/public-api';
 import {
   blankPolicy,
   optimize,
   policyCost,
   policyOptions,
   population,
-} from '../modules/urban-intelligence/public-api';
+  network,
+} from '../contexts/urban-intelligence/public-api';
 import styles from './Page.module.css';
+import { CityMap } from '../contexts/city-network/presentation/public-api';
+import { useJourney } from '../app/model';
+import { Playback } from '../shared/ui/Playback';
 
 function download(data: unknown) {
   const url = URL.createObjectURL(
@@ -21,6 +25,7 @@ function download(data: unknown) {
 }
 
 export function CityLabPage() {
+  const { disrupted } = useJourney();
   const incident = useScenario((state) => state.incident);
   const policy = useScenario((state) => state.policy);
   const budget = useScenario((state) => state.budget);
@@ -35,10 +40,37 @@ export function CityLabPage() {
         <span className={styles.kicker}>04 / Urban intelligence</span>
         <h1>What if the city adapts?</h1>
         <p>
-          Compare interventions against the same synthetic population of 60 residents. Every metric
-          is calculated from their journeys.
+          Compare citizen adaptation with changes to public infrastructure. Every result comes from
+          the journeys of 60 fictional residents.
         </p>
       </section>
+      <div className={styles.metrics}>
+        <div>
+          <span>Normal city</span>
+          <strong>{result.base.percent}%</strong>
+          <small>
+            {result.base.done}/{result.base.total} feasible visits
+          </small>
+        </div>
+        <div>
+          <span>Aftershock</span>
+          <strong>{result.disrupted.percent}%</strong>
+          <small>{result.affected} residents affected</small>
+        </div>
+        <div>
+          <span>Citizen Re-Sync</span>
+          <strong>{result.adapt.percent}%</strong>
+          <small>Without city intervention</small>
+        </div>
+        <div>
+          <span>With city policy</span>
+          <strong>{result.improved.percent}%</strong>
+          <small>
+            {result.improved.done - result.adapt.done >= 0 ? '+' : ''}
+            {result.improved.done - result.adapt.done} additional visits
+          </small>
+        </div>
+      </div>
       <div className={styles.grid}>
         <section className={styles.card}>
           <h2>Municipal interventions</h2>
@@ -52,6 +84,7 @@ export function CityLabPage() {
                   <input
                     type="checkbox"
                     checked={policy[option.id]}
+                    disabled={!policy[option.id] && policyCost(policy) + option.cost > budget}
                     onChange={(event) =>
                       updatePolicy({ ...policy, [option.id]: event.target.checked })
                     }
@@ -130,7 +163,47 @@ export function CityLabPage() {
           </button>
         </section>
       </div>
+      <div className={styles.grid}>
+        <div>
+          <CityMap
+            result={result.rows[0]?.improved ?? disrupted}
+            incident={incident}
+            cityData={network(policy)}
+            residentResults={result.rows.flatMap((row) => row.improved ? [row.improved] : [])}
+          />
+          <Playback start={Math.min(...result.rows.map((row) => row.plan.startTime))} end={Math.max(...result.rows.map((row) => row.improved?.finish ?? row.disrupted.finish))} />
+        </div>
+        <section className={styles.card}>
+          <span className={styles.kicker}>TEMPORAL EQUITY</span>
+          <h2>Who gets access back?</h2>
+          <p>
+            Accessibility is the share of required visits residents can complete. Group gap:{' '}
+            {result.gapBefore} → {result.gapAfter} percentage points.
+          </p>
+          {result.groups.map((group) => (
+            <div className={styles.groupBars} key={group.name}>
+              <strong>{group.name}</strong>
+              {(
+                [
+                  { label: 'Aftershock', value: group.disrupted },
+                  { label: 'Re-Sync', value: group.adapt },
+                  { label: 'Policy', value: group.improved },
+                ] as const
+              ).map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <div className={styles.bar}>
+                    <i style={{ width: `${item.value}%` }} />
+                  </div>
+                  <b>{item.value}%</b>
+                </div>
+              ))}
+            </div>
+          ))}
+        </section>
+      </div>
       <section className={styles.card}>
+        <span className={styles.kicker}>GROUP COMPARISON</span>
         <h2>Citizen groups</h2>
         <div className={styles.scroll}>
           <table className={styles.table}>
@@ -158,6 +231,7 @@ export function CityLabPage() {
         </div>
       </section>
       <section className={styles.card}>
+        <span className={styles.kicker}>BEHIND THE NUMBERS</span>
         <h2>Resident-level impact</h2>
         <div className={styles.scroll}>
           <table className={styles.table}>

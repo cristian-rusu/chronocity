@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { city } from '../modules/city-network/public-api';
-import { calm } from '../modules/aftershock/public-api';
-import { journeyAlternatives } from '../modules/resync/public-api';
-import { simulate } from '../modules/temporal-simulation/public-api';
-import { useScenario } from '../modules/scenario-management/public-api';
+import { city } from '../contexts/city-network/public-api';
+import { calm } from '../contexts/aftershock/public-api';
+import { journeyAlternatives } from '../contexts/resync/public-api';
+import { simulate } from '../contexts/temporal-simulation/public-api';
+import { useScenario } from '../contexts/scenario-management/public-api';
 
 export function useJourney() {
   const profile = useScenario((state) => state.profile);

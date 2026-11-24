@@ -6,7 +6,7 @@
   --muted: #566d68;
   --accent: #087e6b;
   --accent-dark: #075b4e;
-  --border: #d6dfd9;
+  --border: #dce1d5;
   --danger: #a23e39;
   --success: #176e54;
   --map: #eaf2ed;
@@ -17,8 +17,15 @@
   --space-4: 1rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --radius: 0.75rem;
-  font-family: Inter, system-ui, sans-serif;
+  --radius: 1rem;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -53,6 +60,9 @@ button {
 button:hover {
   background: var(--accent-dark);
 }
+button:active {
+  transform: translateY(0.06rem);
+}
 button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -71,6 +81,9 @@ select {
 }
 a {
   color: var(--accent-dark);
+}
+a:hover {
+  text-decoration-thickness: 0.12em;
 }
 h1,
 h2,

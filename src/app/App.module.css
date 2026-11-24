@@ -15,7 +15,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-4) max(var(--space-4), calc((100vw - 75rem) / 2));
+  padding: var(--space-4) max(var(--space-4), calc((100vw - 91rem) / 2));
   background: var(--surface);
   border-block-end: 0.0625rem solid var(--border);
 }
@@ -30,6 +30,14 @@
 }
 .brand strong {
   color: var(--accent);
+}
+.brand svg {
+  background: var(--accent);
+  color: white;
+  border-radius: 0.7rem;
+  padding: 0.4rem;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 .nav {
   display: flex;
@@ -49,8 +57,21 @@
 .nav .active {
   background: var(--map);
 }
+.nav a {
+  font-size: 0.88rem;
+}
+.header > button {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--border);
+  font-size: 0.8rem;
+}
+.header > button:hover {
+  background: var(--map);
+  color: var(--text);
+}
 .main {
-  max-width: 75rem;
+  max-width: 91rem;
   margin-inline: auto;
   padding: var(--space-8) var(--space-4);
   min-height: 80dvh;

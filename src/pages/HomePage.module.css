@@ -1,0 +1,284 @@
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1.12fr;
+  min-height: 29rem;
+  align-items: stretch;
+  background: #183b32;
+  border-radius: 1.6rem;
+  overflow: hidden;
+  position: relative;
+  color: #f7faee;
+}
+.copy {
+  padding: clamp(2rem, 5vw, 4.5rem) 1.5rem clamp(2rem, 4vw, 4rem) clamp(2rem, 5vw, 4.5rem);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.kicker,
+.sectionKicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: #85d8b7;
+}
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.kicker i {
+  height: 0.6rem;
+  width: 0.6rem;
+  border-radius: 50%;
+  background: #8bdfba;
+  box-shadow: 0 0 0 0.3rem #8bdfba22;
+}
+.hero h1 {
+  font-size: clamp(3rem, 5.2vw, 5.7rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  margin: 1.3rem 0 1.5rem;
+  max-width: 11ch;
+}
+.hero h1 em {
+  font-style: normal;
+  color: #9de0b8;
+}
+.copy > p {
+  font-size: clamp(1rem, 1.3vw, 1.25rem);
+  line-height: 1.65;
+  color: #d5e9db;
+  max-width: 38ch;
+}
+.actions {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+.actions a,
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 3rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.7rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+.actions .primary {
+  color: #123d2f;
+  background: #ade5ba;
+}
+.actions button {
+  background: transparent;
+  border: 0.0625rem solid #c7e5d1;
+  color: #f7faee;
+}
+.actions svg {
+  width: 1.1rem;
+}
+.actions .primary:hover {
+  background: #d0f2d2;
+}
+.actions button:hover {
+  background: #ffffff18;
+}
+.note {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: #c7dbc9;
+  margin-top: 1.5rem;
+  max-width: 34rem;
+}
+.note svg {
+  flex: none;
+}
+.art {
+  position: relative;
+  min-width: 0;
+  min-height: 24rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #507968 0%, #183b32 70%);
+}
+.float {
+  position: absolute;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 0.8rem;
+  padding: 0.85rem 1.2rem;
+  box-shadow: 0 1rem 2.5rem #0a241d45;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 9.5rem;
+  animation: float 5s ease-in-out infinite;
+}
+.float small {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+.float strong {
+  font-size: 1.65rem;
+  line-height: 1.1;
+}
+.float strong svg {
+  vertical-align: middle;
+}
+.float span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.floatTop {
+  top: 8%;
+  right: 7%;
+}
+.floatBottom {
+  bottom: 7%;
+  left: 6%;
+  animation-delay: -2.5s;
+}
+.floatBottom strong {
+  font-size: 1rem;
+}
+.context {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.2rem;
+  align-items: center;
+  padding: 2.5rem 0.5rem 1.6rem;
+}
+.sectionKicker {
+  color: var(--accent);
+}
+.context h2 {
+  font-size: clamp(2rem, 3.2vw, 3.3rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin: 0.6rem 0;
+}
+.context p {
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 57ch;
+}
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.feature {
+  padding: 1.4rem;
+  background: var(--surface);
+  border: 0.0625rem solid var(--border);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.feature:hover {
+  transform: translateY(-0.3rem);
+  box-shadow: 0 0.7rem 2rem #213a2e15;
+}
+.featureTop {
+  display: flex;
+  justify-content: space-between;
+  color: var(--accent);
+  font-weight: 800;
+}
+.feature h3 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+.feature p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  flex: 1;
+}
+.featureLink {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+@keyframes float {
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+@media (max-width: 65rem) {
+  .features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 53rem) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .copy {
+    padding: 2.5rem;
+  }
+  .art {
+    min-height: 22rem;
+  }
+  .hero h1 {
+    max-width: none;
+  }
+  .context {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+}
+@media (max-width: 32rem) {
+  .hero {
+    border-radius: 1rem;
+  }
+  .copy {
+    padding: 1.7rem 1.3rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.7rem, 11vw, 4rem);
+  }
+  .art {
+    min-height: 17rem;
+  }
+  .features {
+    grid-template-columns: 1fr;
+  }
+  .actions a,
+  .actions button {
+    width: 100%;
+  }
+  .float {
+    padding: 0.6rem 0.8rem;
+    min-width: 6rem;
+  }
+  .float strong {
+    font-size: 1.2rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .float {
+    animation: none;
+  }
+  .feature {
+    transition: none;
+  }
+}

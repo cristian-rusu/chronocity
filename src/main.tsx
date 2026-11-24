@@ -12,4 +12,21 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import './shared/styles/index.css';
 
 const root = document.getElementById('root');
-if (root) createRoot(root).render(<React.StrictMode><BrowserRouter><Routes><Route element={<App />}><Route path="/" element={<HomePage />} /><Route path="/my-day" element={<MyDayPage />} /><Route path="/aftershock" element={<AftershockPage />} /><Route path="/resync" element={<ResyncPage />} /><Route path="/my-day/accepted" element={<AcceptedPage />} /><Route path="/city-lab" element={<CityLabPage />} /><Route path="*" element={<NotFoundPage />} /></Route></Routes></BrowserRouter></React.StrictMode>);
+if (root)
+  createRoot(root).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<App />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/my-day" element={<MyDayPage />} />
+            <Route path="/aftershock" element={<AftershockPage />} />
+            <Route path="/resync" element={<ResyncPage />} />
+            <Route path="/my-day/accepted" element={<AcceptedPage />} />
+            <Route path="/city-lab" element={<CityLabPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </React.StrictMode>,
+  );

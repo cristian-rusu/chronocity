@@ -1,0 +1,132 @@
+.wrapper {
+  background: var(--surface);
+  border: 0.0625rem solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-width: 0;
+}
+.heading {
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.heading small {
+  font-size: 0.68rem;
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.heading h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  background: #eff1e9;
+  border: 0.0625rem solid var(--border);
+  padding: 0.2rem;
+  border-radius: 0.6rem;
+}
+.layers button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  min-height: 2rem;
+}
+.layers button[aria-pressed='true'] {
+  background: white;
+  color: var(--accent-dark);
+  box-shadow: 0 0.0625rem 0.25rem #273d2f14;
+}
+.map {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #f0f1e9;
+}
+.target {
+  cursor: pointer;
+  outline: none;
+}
+.target:hover > circle:first-of-type,
+.target:focus-visible > circle:first-of-type {
+  stroke: #7951ae;
+  stroke-width: 4;
+}
+.target:hover > line:nth-of-type(2),
+.target:focus-visible > line:nth-of-type(2) {
+  stroke: #7951ae;
+  stroke-width: 5;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.6rem 1.1rem;
+  background: #f8f9f2;
+  border-top: 0.0625rem solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.legend span {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.legend i {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.legend .red {
+  background: #d94b39;
+}
+.legend .purple {
+  background: #7951ae;
+}
+.inspector {
+  min-height: 3.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1.1rem;
+  border-top: 0.0625rem solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.inspector strong {
+  color: var(--text);
+}
+.inspector button {
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+.citizen {
+  transition: transform 0.3s ease;
+}
+.hero {
+  border: 0;
+  box-shadow: 0 1rem 3rem #0a241d45;
+  transform: rotate(-5deg) scale(1.08);
+  width: 105%;
+  flex: none;
+}
+.hero .map {
+  width: 100%;
+}
+@media (max-width: 48rem) {
+  .hero {
+    transform: rotate(-4deg) scale(0.95);
+    width: 100%;
+  }
+}

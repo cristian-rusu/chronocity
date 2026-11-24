@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { city, validateCity } from '../../src/modules/city-network/public-api';
-import { profiles, validateActivity } from '../../src/modules/citizen-planning/public-api';
-import { calm, defaultIncident, edgeTime } from '../../src/modules/aftershock/public-api';
-import { route } from '../../src/modules/routing/public-api';
-import { simulate } from '../../src/modules/temporal-simulation/public-api';
-import { alternatives, journeyAlternatives } from '../../src/modules/resync/public-api';
+import { city, validateCity } from '../../src/contexts/city-network/public-api';
+import { profiles, validateActivity } from '../../src/contexts/citizen-planning/public-api';
+import { calm, defaultIncident, edgeTime } from '../../src/contexts/aftershock/public-api';
+import { route } from '../../src/contexts/temporal-simulation/public-contracts';
+import { simulate } from '../../src/contexts/temporal-simulation/public-api';
+import { alternatives, journeyAlternatives } from '../../src/contexts/resync/public-api';
 import {
   blankPolicy,
   network,
   optimize,
   policyCost,
   population,
-} from '../../src/modules/urban-intelligence/public-api';
+} from '../../src/contexts/urban-intelligence/public-api';
 
 const plan = profiles[0].plan;
 describe('city and planning invariants', () => {

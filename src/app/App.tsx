@@ -2,7 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Clock3, House, CalendarDays, Activity, RefreshCcw, Building2 } from 'lucide-react';
 import styles from './App.module.css';
-import { useScenario } from '../modules/scenario-management/public-api';
+import { useScenario } from '../contexts/scenario-management/public-api';
 
 const links = [
   { to: '/', label: 'Overview', icon: House },
