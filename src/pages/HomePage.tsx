@@ -1,132 +1,137 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { useJourney } from '../app/model';
 import { useScenario } from '../contexts/scenario-management/public-api';
 import { defaultIncident } from '../contexts/aftershock/public-api';
 import { CityMap } from '../contexts/city-network/presentation/public-api';
+import styles from './HomePage.module.css';
 
-const features = [
+const steps = [
   {
     number: '01',
     icon: 'plan',
-    title: 'Plan around real constraints',
-    copy: 'Set your stops, service hours and deadlines. Know whether your day is possible before you leave.',
-    to: '/my-day',
+    title: 'Plan your day',
+    copy: 'Review your daily obligations, opening hours and fixed deadlines on Achrona’s live city map.',
+    to: '/my-journey',
   },
   {
     number: '02',
     icon: 'pulse',
-    title: 'See the ripple effect',
-    copy: 'Simulate a disruption. Follow the consequences across your journey, not just on one train line.',
-    to: '/aftershock',
+    title: 'See the disruption',
+    copy: 'Trigger a transport delay and immediately understand which appointments and pickups are now at risk.',
+    to: '/my-journey?step=disruption',
   },
   {
     number: '03',
     icon: 'recover',
-    title: 'Reclaim your day',
-    copy: 'Compare new routes and activity orders. Keep essential obligations safe, and see what needs postponing.',
-    to: '/resync',
+    title: 'Reclaim your schedule',
+    copy: 'Accept a clear, feasible recovery route that protects essential deadlines before you leave.',
+    to: '/my-journey?step=recovery',
   },
-  {
-    number: '04',
-    icon: 'lab',
-    title: 'Change the system',
-    copy: 'Test city interventions against 60 synthetic residents and a limited budget.',
-    to: '/city-lab',
-  },
-];
+] as const;
 
 export function HomePage() {
   const { base } = useJourney();
   const updateIncident = useScenario((state) => state.updateIncident);
-  const reset = useScenario((state) => state.reset);
   const navigate = useNavigate();
+
   return (
     <>
-      <section className={'hero'}>
-        <div className={'hero-copy'}>
+      <section className="hero">
+        <div className="hero-copy">
           <span className="kicker">
-            <i className="live-dot" /> HACK THE FUTURE / ACHRONA
+            <i className="live-dot" /> HACK THE FUTURE 2026 / ACHRONA
           </span>
-          <h1>
-            The city moves.
-            <br />
-            <em>Life gets in the way.</em>
+          <h1 className={styles.heroTitle}>
+            One disruption should not <em>ruin your entire day.</em>
           </h1>
           <p>
-            One delayed tram can ruin an entire afternoon. ChronoCity shows what happens next — and
-            finds a way to get your day back.
+            ChronoCity helps working parents, commuters and shift workers recover their daily plans
+            when transport delays put essential obligations at risk.
           </p>
-          <div className={'hero-actions'}>
-            <Link className={'btn primary'} to="/my-day">
-              Plan my day <OriginalIcon name="arrow" />
+          <div className="hero-actions">
+            <Link className="btn primary" to="/my-journey">
+              Start my journey <OriginalIcon name="arrow" />
             </Link>
             <button
               type="button"
               className="btn ghost"
               onClick={() => {
-                if (!window.confirm('Load the sample disruption? Your current scenario will be replaced.')) return;
-                reset();
                 updateIncident({ ...defaultIncident, delay: 30 });
-                navigate('/aftershock');
+                navigate('/my-journey?step=disruption');
               }}
             >
-              <OriginalIcon name="pulse" /> Try a disruption
+              <OriginalIcon name="pulse" /> Explore sample disruption
             </button>
           </div>
-          <span className={'hero-note'}>
-            <OriginalIcon name="info" /> An interactive prototype with a fictional city and
-            calculated scenarios.
+          <span className="hero-note">
+            <OriginalIcon name="info" /> Built for urban citizens with limited schedule flexibility
+            · deterministic simulation in Achrona.
           </span>
         </div>
-        <div className={'hero-art'}>
+
+        <div className="hero-art">
           <CityMap result={base} incident={defaultIncident} hero />
-          <div className={`${'float-card'} ${'float-top'}`}>
-            <small className="kicker">AFTERSHOCK</small>
+          <div className="float-card float-top">
+            <small className="kicker">DISRUPTION</small>
             <strong>+30 min</strong>
-            <span>Tram interruption</span>
+            <span>Tram delay to City Hall</span>
           </div>
-          <div className={`${'float-card'} ${'float-bottom'}`}>
-            <small className="kicker">A BETTER FUTURE</small>
+          <div className="float-card float-bottom">
+            <small className="kicker">RECOVERY</small>
             <strong>
-              Find another way <OriginalIcon name="arrow" />
+              3/3 deadlines protected <OriginalIcon name="arrow" />
             </strong>
-            <span>Protect the things that matter.</span>
+            <span>Alternative route found automatically.</span>
           </div>
         </div>
       </section>
-      <section className={'home-context'}>
+
+      <section className="home-context">
         <div>
-          <span className={'kicker'}>THE INVISIBLE BARRIER</span>
+          <span className="kicker">WHY CHRONOCITY</span>
           <h2>
-            Same city.
+            Connected city.
             <br />
-            Different access to time.
+            Disconnected schedules.
           </h2>
         </div>
         <p>
-          Work, childcare, transport and public services run on different schedules. People with
-          limited flexibility pay the price. ChronoCity connects those timelines so you can see
-          which obligations are possible, what a disruption changes, and which alternative really
-          works.
+          Public transport, workplaces, childcare and public services run on independent clocks.
+          When one link slips, a single delay can trigger missed appointments and closed doors.
+          ChronoCity connects transport disruptions directly to your real responsibilities — and
+          finds a feasible way forward.
         </p>
       </section>
-      <section className="home-cards" aria-label="Explore ChronoCity">
-        {features.map(({ number, icon, title, copy, to }) => (
-          <Link key={number} to={to} className={'home-card'}>
+
+      <section className={styles.workflowCards} aria-label="How ChronoCity works">
+        {steps.map(({ number, icon, title, copy, to }) => (
+          <Link key={number} to={to} className="home-card">
             <div className="card-top">
               <span>{number}</span>
-              <OriginalIcon name={icon as 'plan'|'pulse'|'recover'|'lab'} />
+              <OriginalIcon name={icon} />
             </div>
             <h3>{title}</h3>
             <p>{copy}</p>
             <span className="card-link">
-              Explore <OriginalIcon name="arrow" />
+              Open step <OriginalIcon name="arrow" />
             </span>
           </Link>
         ))}
       </section>
+
+      <aside className={styles.cityLabBanner} aria-label="Broader municipal vision">
+        <div>
+          <span className="kicker">BROADER VISION · CITY LAB</span>
+          <p>
+            Beyond individual recovery: see how municipalities can test transit and service-hour
+            interventions across 60 synthetic residents.
+          </p>
+        </div>
+        <Link className="btn secondary" to="/city-lab">
+          <OriginalIcon name="lab" /> Explore City Lab
+        </Link>
+      </aside>
     </>
   );
 }
-

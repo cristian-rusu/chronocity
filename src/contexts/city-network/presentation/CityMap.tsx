@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { city as defaultCity } from '../infrastructure/dataset';
 import type { City, Place } from '../public-contracts';
 import type { Result } from '../../temporal-simulation/public-contracts';
@@ -305,6 +305,9 @@ export function CityMap({
   hero = false,
   cityData = defaultCity,
   residentResults = [],
+  compactControls = false,
+  title,
+  kicker,
 }: {
   result: Result;
   incident?: Incident;
@@ -312,14 +315,25 @@ export function CityMap({
   hero?: boolean;
   cityData?: City;
   residentResults?: Result[];
+  compactControls?: boolean;
+  title?: string;
+  kicker?: string;
 }) {
   const city = cityData;
   const [selected, setSelected] = useState<Selection>(null);
   const [layer, setLayer] = useState<Layer>(cityData === defaultCity ? 'routes' : 'people');
+  const [showLayers, setShowLayers] = useState(false);
+  const availableLayers: Layer[] =
+    compactControls && residentResults.length === 0
+      ? ['routes', 'access']
+      : ['routes', 'access', 'people'];
   const selectedEdge =
     selected?.kind === 'edge' ? city.edges.find((edge) => edge.id === selected.id) : undefined;
   const selectedPlace =
     selected?.kind === 'place' ? city.places.find((item) => item.id === selected.id) : undefined;
+  const headingTitle = title ?? (cityData === defaultCity ? 'Your route in the city' : 'City activity');
+  const headingKicker = kicker ?? 'ACHRONA / SYNTHETIC DISTRICT';
+  const hasActiveDisruption = incident.delay > 0 || Boolean(incident.closure);
   return (
     <section
       className={hero ? 'hero-map-container' : 'panel map-panel'}
@@ -328,21 +342,48 @@ export function CityMap({
       {!hero && (
         <div className={'panel-heading'}>
           <div>
-            <div className="kicker">ACHRONA / SYNTHETIC DISTRICT</div>
-            <h2>{cityData === defaultCity ? 'Your route in the city' : 'City activity'}</h2>
+            <div className="kicker">{headingKicker}</div>
+            <h2>{headingTitle}</h2>
           </div>
-          <div className={'segmented'} aria-label="Map layer">
-            {(['routes', 'access', 'people'] as const).map((value) => (
+          {compactControls ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {showLayers && (
+                <div className={'segmented'} aria-label="Map layer">
+                  {availableLayers.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={layer === value}
+                      onClick={() => setLayer(value)}
+                    >
+                      {value === 'routes' ? 'Route' : value === 'access' ? 'Open hours' : 'Residents'}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
-                key={value}
                 type="button"
-                aria-pressed={layer === value}
-                onClick={() => setLayer(value)}
+                className="btn small"
+                aria-expanded={showLayers}
+                onClick={() => setShowLayers((open) => !open)}
               >
-                {value === 'routes' ? 'Network' : value === 'access' ? 'Open hours' : 'Residents'}
+                {showLayers ? 'Hide layers' : 'Map layers'}
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className={'segmented'} aria-label="Map layer">
+              {availableLayers.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={layer === value}
+                  onClick={() => setLayer(value)}
+                >
+                  {value === 'routes' ? 'Network' : value === 'access' ? 'Open hours' : 'Residents'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div className="map-wrap"><svg
@@ -385,7 +426,15 @@ export function CityMap({
       </svg>
       {!hero && (
         <>
-          <div className="map-caption"><i/>{cityData === defaultCity ? 'Selected journey' : 'City network · purple = added shuttle'}<i className="red-dot"/>Disruption
+          <div className="map-caption">
+            <i />
+            {cityData === defaultCity ? 'Active journey' : 'City network · purple = added shuttle'}
+            {(hasActiveDisruption || cityData !== defaultCity) && (
+              <>
+                <i className="red-dot" />
+                Disruption
+              </>
+            )}
           </div>
         </>
       )}
@@ -400,7 +449,7 @@ export function CityMap({
                 <span>
                   {selectedEdge.mode} · {selectedEdge.minutes} min normal travel
                   {incident.edge === selectedEdge.id && incident.delay > 0
-                    ? ` · +${incident.delay} min during incident`
+                    ? ` · +${incident.delay} min delay`
                     : ''}
                 </span>
                 {onSelectEdge && (
@@ -423,7 +472,9 @@ export function CityMap({
               </>
             ) : (
               <span>
-                Click a location or connection to inspect it. Playback does not change your selection.
+                {onSelectEdge
+                  ? 'Click any location or transport link on the map to inspect or disrupt it.'
+                  : 'Click any location or transport link on the map to inspect its hours and travel time.'}
               </span>
             )}
           </div>

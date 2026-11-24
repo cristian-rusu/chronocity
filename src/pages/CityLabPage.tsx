@@ -1,17 +1,35 @@
 import { useMemo, useState } from 'react';
 import { OriginalIcon } from '../shared/ui/OriginalIcon';
 import { useScenario } from '../contexts/scenario-management/public-api';
-import { optimize, policyCost, policyOptions, population, network } from '../contexts/urban-intelligence/public-api';
+import {
+  optimize,
+  policyCost,
+  policyOptions,
+  population,
+  network,
+} from '../contexts/urban-intelligence/public-api';
 import { CityMap } from '../contexts/city-network/presentation/public-api';
 import { DisruptionPanel } from '../contexts/aftershock/presentation/public-api';
 import { useJourney } from '../app/model';
 import { Playback } from '../shared/ui/Playback';
 import { Journey } from '../contexts/temporal-simulation/presentation/public-api';
+import styles from './MyJourneyPage.module.css';
 
-function download(data: unknown) { const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' })); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'chronocity-scenario.json'; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); }
+function download(data: unknown) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+  );
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'chronocity-scenario.json';
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export function CityLabPage() {
   const [residentId, setResidentId] = useState('');
+  const [showPlayback, setShowPlayback] = useState(false);
+  const [showResidents, setShowResidents] = useState(false);
   const { disrupted } = useJourney();
   const incident = useScenario((state) => state.incident);
   const updateIncident = useScenario((state) => state.updateIncident);
@@ -24,12 +42,274 @@ export function CityLabPage() {
   const result = useMemo(() => population(incident, policy), [incident, policy]);
   const selectedResident = result.rows.find((row) => row.id === residentId);
   const cost = policyCost(policy);
-  return <>
-    <div className="page-heading"><div><div className="kicker">04 / URBAN INTELLIGENCE</div><h1>What if the city adapts?</h1><p>A policy sandbox: compare citizen adaptation with changes to public infrastructure. All results come from 60 fictional residents.</p></div><button className="btn secondary" type="button" onClick={() => download({incident,policy,budget,objective,metrics:result})}><OriginalIcon name="download"/>Export scenario</button></div>
-    <div className="stat-grid"><div className="stat"><span>Normal city</span><strong>{result.base.percent}%</strong><small>{result.base.done}/{result.base.total} feasible obligations</small></div><div className="stat bad-stat"><span>Aftershock</span><strong>{result.disrupted.percent}%</strong><small>{result.affected} residents affected</small></div><div className="stat"><span>Citizen Re-Sync</span><strong>{result.adapt.percent}%</strong><small>Without policy intervention</small></div><div className="stat good-stat"><span>With city policy</span><strong>{result.improved.percent}%</strong><small>{result.improved.done - result.adapt.done >= 0 ? '+' : ''}{result.improved.done - result.adapt.done} additional obligations</small></div></div>
-    <div className="two-col simulation-grid"><div><CityMap result={result.rows[0]?.improved ?? disrupted} incident={incident} cityData={network(policy)} residentResults={result.rows.flatMap((row) => row.improved ? [row.improved] : [])}/><Playback start={420} end={1260}/><section className="panel timeline-panel"><div className="panel-heading"><div><div className="kicker">TEMPORAL EQUITY</div><h2>Who gets access back?</h2></div><span className="tag">Gap {result.gapBefore} → {result.gapAfter} pp</span></div><div className="panel-body">{result.groups.map((group) => <div className="equity-group" key={group.name}><strong>{group.name}</strong>{([{label:'Aftershock',value:group.disrupted,color:'#d94b39'},{label:'Re-Sync',value:group.adapt,color:'#8877be'},{label:'Policy',value:group.improved,color:'#087e6b'}]).map((item) => <div className="bar-row" key={item.label}><span>{item.label}</span><div className="bar"><i style={{width:`${item.value}%`,background:item.color}}/></div><b>{item.value}%</b></div>)}</div>)}<p className="fine">Accessibility = feasible obligations / required obligations. Gap = highest minus lowest group percentage. Illustrative only.</p></div></section></div>
-    <aside><DisruptionPanel incident={incident} onChange={updateIncident}/><section className="panel impact-panel"><div className="panel-heading"><div><div className="kicker">INTERVENTIONS</div><h2>Allocate city resources</h2></div><span className={`tag ${cost > budget ? 'red' : 'green'}`}>{cost}/{budget} credits</span></div><div className="panel-body"><label>Budget (synthetic credits)<select value={budget} onChange={(event) => setBudget(Number(event.target.value))}>{Array.from({length:10},(_,i) => <option key={i} value={i}>{i}</option>)}</select></label>{policyOptions.map((option) => <label className="policy-option" key={option.id}><input type="checkbox" checked={policy[option.id]} disabled={!policy[option.id] && cost + option.cost > budget} onChange={(event) => updatePolicy({...policy,[option.id]:event.target.checked})}/><span><strong>{option.title}</strong><small>{option.description}</small></span><b>{option.cost}</b></label>)}<label>Optimization goal<select value={objective} onChange={(event) => setObjective(event.target.value === 'equity' ? 'equity' : 'access')}><option value="access">Maximize total accessibility</option><option value="equity">Prioritize worst-served group</option></select></label><button type="button" className="btn primary full" onClick={() => updatePolicy(optimize(incident,budget,objective))}>Optimize within budget</button><p className="fine">Evaluates every affordable combination of the four policies.</p></div></section></aside></div>
-    <section className="panel detail-panel"><div className="panel-heading"><div><div className="kicker">BEHIND THE NUMBERS</div><h2>Citizen-level impact</h2></div><span className="tag">{result.rows.length} residents</span></div><div className="panel-body"><div className="resident-table"><table><thead><tr><th>Resident</th><th>Original</th><th>Aftershock</th><th>Re-Sync</th><th>Policy</th><th>Change</th></tr></thead><tbody>{[...result.rows].sort((a,b) => ((b.improved?.completed ?? 0) - (b.adapt?.completed ?? 0)) - ((a.improved?.completed ?? 0) - (a.adapt?.completed ?? 0))).map((row) => <tr key={row.id}><td><button type="button" className="resident-link" aria-pressed={residentId === row.id} onClick={() => setResidentId(residentId === row.id ? '' : row.id)}><strong>{row.name}</strong><small>{row.group}</small></button></td><td>{row.base.completed}</td><td>{row.disrupted.completed}</td><td>{row.adapt?.completed ?? 0}</td><td>{row.improved?.completed ?? 0}</td><td>{(row.improved?.completed ?? 0) - (row.adapt?.completed ?? 0)}</td></tr>)}</tbody></table></div></div></section>
-    {selectedResident && <section className="panel detail-panel"><div className="panel-heading"><div><div className="kicker">INDIVIDUAL OUTCOME</div><h2>{selectedResident.name} · {selectedResident.group}</h2></div></div><div className="panel-body">{selectedResident.improved ? <Journey result={selectedResident.improved}/> : <div className="empty">No feasible recovery is available for this resident.</div>}</div></section>}
-  </>;
+
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <div className="kicker">CITY LAB · BROADER VISION</div>
+          <h1>What if the city adapts?</h1>
+          <p>
+            Beyond individual recovery, City Lab shows how municipalities can use the same temporal
+            simulation engine to test transport and service-hour interventions across 60 synthetic
+            residents.
+          </p>
+        </div>
+        <button
+          className="btn secondary"
+          type="button"
+          onClick={() => download({ incident, policy, budget, objective, metrics: result })}
+        >
+          <OriginalIcon name="download" /> Export scenario
+        </button>
+      </div>
+
+      <div className="stat-grid">
+        <div className="stat">
+          <span>Normal city</span>
+          <strong>{result.base.percent}%</strong>
+          <small>
+            {result.base.done}/{result.base.total} feasible obligations
+          </small>
+        </div>
+        <div className="stat bad-stat">
+          <span>During disruption</span>
+          <strong>{result.disrupted.percent}%</strong>
+          <small>{result.affected} residents affected</small>
+        </div>
+        <div className="stat">
+          <span>Citizen recovery</span>
+          <strong>{result.adapt.percent}%</strong>
+          <small>Without policy intervention</small>
+        </div>
+        <div className="stat good-stat">
+          <span>With city policy</span>
+          <strong>{result.improved.percent}%</strong>
+          <small>
+            {result.improved.done - result.adapt.done >= 0 ? '+' : ''}
+            {result.improved.done - result.adapt.done} additional obligations
+          </small>
+        </div>
+      </div>
+
+      <div className="two-col simulation-grid">
+        <div>
+          <CityMap
+            result={result.rows[0]?.improved ?? disrupted}
+            incident={incident}
+            cityData={network(policy)}
+            residentResults={result.rows.flatMap((row) => (row.improved ? [row.improved] : []))}
+          />
+
+          <div className={styles.utilityBar} style={{ marginBlockStart: '0.85rem' }}>
+            <button
+              type="button"
+              className={styles.utilityToggle}
+              aria-expanded={showPlayback}
+              onClick={() => setShowPlayback((open) => !open)}
+            >
+              <OriginalIcon name="clock" />
+              <span>{showPlayback ? 'Hide time playback' : 'Explore time playback'}</span>
+            </button>
+            <span className={styles.utilityHint}>
+              Inspect how 60 residents move through the city across the day.
+            </span>
+          </div>
+
+          {showPlayback && (
+            <div className={styles.playbackBox} style={{ marginBlockStart: '0.75rem' }}>
+              <Playback start={420} end={1260} />
+            </div>
+          )}
+
+          <section className="panel timeline-panel">
+            <div className="panel-heading">
+              <div>
+                <div className="kicker">TEMPORAL EQUITY</div>
+                <h2>Who gets access back?</h2>
+              </div>
+              <span className="tag">
+                Gap {result.gapBefore} → {result.gapAfter} pp
+              </span>
+            </div>
+            <div className="panel-body">
+              {result.groups.map((group) => (
+                <div className="equity-group" key={group.name}>
+                  <strong>{group.name}</strong>
+                  {[
+                    { label: 'Disrupted', value: group.disrupted, color: '#d94b39' },
+                    { label: 'Citizen', value: group.adapt, color: '#8877be' },
+                    { label: 'Policy', value: group.improved, color: '#087e6b' },
+                  ].map((item) => (
+                    <div className="bar-row" key={item.label}>
+                      <span>{item.label}</span>
+                      <div className="bar">
+                        <i style={{ width: `${item.value}%`, background: item.color }} />
+                      </div>
+                      <b>{item.value}%</b>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <p className="fine">
+                Accessibility = feasible obligations / required obligations. Gap = highest minus
+                lowest group percentage. Illustrative only.
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <aside>
+          <DisruptionPanel incident={incident} onChange={updateIncident} />
+          <section className="panel impact-panel">
+            <div className="panel-heading">
+              <div>
+                <div className="kicker">INTERVENTIONS</div>
+                <h2>Allocate city resources</h2>
+              </div>
+              <span className={`tag ${cost > budget ? 'red' : 'green'}`}>
+                {cost}/{budget} credits
+              </span>
+            </div>
+            <div className="panel-body">
+              <label>
+                Budget (synthetic credits)
+                <select
+                  value={budget}
+                  onChange={(event) => setBudget(Number(event.target.value))}
+                >
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {policyOptions.map((option) => (
+                <label className="policy-option" key={option.id}>
+                  <input
+                    type="checkbox"
+                    checked={policy[option.id]}
+                    disabled={!policy[option.id] && cost + option.cost > budget}
+                    onChange={(event) =>
+                      updatePolicy({ ...policy, [option.id]: event.target.checked })
+                    }
+                  />
+                  <span>
+                    <strong>{option.title}</strong>
+                    <small>{option.description}</small>
+                  </span>
+                  <b>{option.cost}</b>
+                </label>
+              ))}
+              <label>
+                Optimization goal
+                <select
+                  value={objective}
+                  onChange={(event) =>
+                    setObjective(event.target.value === 'equity' ? 'equity' : 'access')
+                  }
+                >
+                  <option value="access">Maximize total accessibility</option>
+                  <option value="equity">Prioritize worst-served group</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="btn primary full"
+                onClick={() => updatePolicy(optimize(incident, budget, objective))}
+              >
+                Optimize within budget
+              </button>
+              <p className="fine">Evaluates every affordable combination of the four policies.</p>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section className="panel detail-panel">
+        <div className="panel-heading">
+          <div>
+            <div className="kicker">BEHIND THE NUMBERS</div>
+            <h2>Citizen-level impact ({result.rows.length} residents)</h2>
+          </div>
+          <button
+            type="button"
+            className="btn secondary"
+            aria-expanded={showResidents}
+            onClick={() => setShowResidents((open) => !open)}
+          >
+            {showResidents ? 'Hide resident table' : 'Inspect individual residents'}
+          </button>
+        </div>
+        {showResidents && (
+          <div className="panel-body">
+            <div className="resident-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Resident</th>
+                    <th>Original</th>
+                    <th>Disrupted</th>
+                    <th>Citizen</th>
+                    <th>Policy</th>
+                    <th>Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...result.rows]
+                    .sort(
+                      (a, b) =>
+                        (b.improved?.completed ?? 0) -
+                        (b.adapt?.completed ?? 0) -
+                        ((a.improved?.completed ?? 0) - (a.adapt?.completed ?? 0)),
+                    )
+                    .map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <button
+                            type="button"
+                            className="resident-link"
+                            aria-pressed={residentId === row.id}
+                            onClick={() => setResidentId(residentId === row.id ? '' : row.id)}
+                          >
+                            <strong>{row.name}</strong>
+                            <small>{row.group}</small>
+                          </button>
+                        </td>
+                        <td>{row.base.completed}</td>
+                        <td>{row.disrupted.completed}</td>
+                        <td>{row.adapt?.completed ?? 0}</td>
+                        <td>{row.improved?.completed ?? 0}</td>
+                        <td>{(row.improved?.completed ?? 0) - (row.adapt?.completed ?? 0)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {showResidents && selectedResident && (
+        <section className="panel detail-panel">
+          <div className="panel-heading">
+            <div>
+              <div className="kicker">INDIVIDUAL OUTCOME</div>
+              <h2>
+                {selectedResident.name} · {selectedResident.group}
+              </h2>
+            </div>
+          </div>
+          <div className="panel-body">
+            {selectedResident.improved ? (
+              <Journey result={selectedResident.improved} />
+            ) : (
+              <div className="empty">No feasible recovery is available for this resident.</div>
+            )}
+          </div>
+        </section>
+      )}
+    </>
+  );
 }
