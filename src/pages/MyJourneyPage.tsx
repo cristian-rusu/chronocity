@@ -33,6 +33,7 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
   const [stage, setStage] = useState<JourneyStage>(() => parseStage(paramStep, initialStage));
   const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
   const [showPlayback, setShowPlayback] = useState(false);
+  const [focusedPlaceId, setFocusedPlaceId] = useState<string | null>(null);
 
   const { profile, plan, base, disrupted, candidates } = useJourney();
   const incident = useScenario((state) => state.incident);
@@ -108,71 +109,78 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
 
   return (
     <>
-      <div className={styles.topBar}>
-        <div className={styles.headingGroup}>
-          <div className="kicker">MY JOURNEY · GUIDED WORKFLOW</div>
-          <h1>One disruption shouldn’t ruin your day.</h1>
-          <p>{stageCopy}</p>
+      <header className={styles.workspaceBanner}>
+        <div className={styles.topBar}>
+          <div className={styles.headingGroup}>
+            <div className={styles.bannerKicker}>MY JOURNEY · GUIDED WORKFLOW</div>
+            <h1>One disruption shouldn’t ruin your day.</h1>
+            <p>{stageCopy}</p>
+          </div>
+
+          <nav className={styles.stepper} aria-label="Journey steps">
+            {STAGES.map((item, idx) => {
+              const active = stage === item.id;
+              const currentIdx = STAGES.findIndex((s) => s.id === stage);
+              const done = idx < currentIdx;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`${styles.stepBtn} ${active ? styles.stepBtnActive : ''} ${done ? styles.stepBtnDone : ''}`}
+                  aria-current={active ? 'step' : undefined}
+                  onClick={() => {
+                    setFocusedPlaceId(null);
+                    if (item.id === 'disruption') handleSimulateDisruption();
+                    else goToStage(item.id);
+                  }}
+                >
+                  <span className={styles.stepNum}>{done ? '✓' : item.number}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav className={styles.stepper} aria-label="Journey steps">
-          {STAGES.map((item, idx) => {
-            const active = stage === item.id;
-            const currentIdx = STAGES.findIndex((s) => s.id === stage);
-            const done = idx < currentIdx;
+        <div className={styles.profileStrip} role="group" aria-label="Citizen scenario">
+          <span className={styles.profileLabel}>Citizen scenario</span>
+          {profiles.map((item) => {
+            const selected = profile === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
-                className={`${styles.stepBtn} ${active ? styles.stepBtnActive : ''} ${done ? styles.stepBtnDone : ''}`}
-                aria-current={active ? 'step' : undefined}
+                className={`${styles.profileChip} ${selected ? styles.profileChipSelected : ''}`}
+                aria-pressed={selected}
                 onClick={() => {
-                  if (item.id === 'disruption') handleSimulateDisruption();
-                  else goToStage(item.id);
+                  selectProfile(item.id);
+                  setSelectedCandidateIdx(0);
+                  setFocusedPlaceId(null);
                 }}
               >
-                <span className={styles.stepNum}>{done ? '✓' : item.number}</span>
-                <span>{item.label}</span>
+                <span
+                  className={`${styles.profileAvatar} ${item.id === 'noah' ? styles.profileAvatarNoah : item.id === 'maya' ? styles.profileAvatarMaya : ''}`}
+                >
+                  {item.initials}
+                </span>
+                <span className={styles.profileText}>
+                  <strong>{item.name}</strong>
+                  <small>{item.role}</small>
+                </span>
               </button>
             );
           })}
-        </nav>
-      </div>
-
-      <div className={styles.profileStrip} role="group" aria-label="Citizen scenario">
-        <span className={styles.profileLabel}>Scenario</span>
-        {profiles.map((item) => {
-          const selected = profile === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={`${styles.profileChip} ${selected ? styles.profileChipSelected : ''}`}
-              aria-pressed={selected}
-              onClick={() => {
-                selectProfile(item.id);
-                setSelectedCandidateIdx(0);
-              }}
-            >
-              <span
-                className={`${styles.profileAvatar} ${item.id === 'noah' ? styles.profileAvatarNoah : item.id === 'maya' ? styles.profileAvatarMaya : ''}`}
-              >
-                {item.initials}
-              </span>
-              <span className={styles.profileText}>
-                <strong>{item.name}</strong>
-                <small>{item.role}</small>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        </div>
+      </header>
 
       <div className={styles.workspaceGrid}>
         <div className={styles.mapColumn}>
           <CityMap
             result={mapResult}
             incident={mapIncident}
+            startPlaceId={plan.startPlace}
+            highlightedPlaceId={focusedPlaceId}
+            onSelectPlace={setFocusedPlaceId}
             compactControls
             kicker={mapKicker}
             title={mapTitle}
@@ -241,6 +249,8 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
               plan={plan}
               base={base}
               hasAccepted={Boolean(acceptedOrder)}
+              highlightedPlaceId={focusedPlaceId}
+              onFocusPlace={setFocusedPlaceId}
               onUpdatePlan={updatePlan}
               onSaveActivity={saveActivity}
               onRemoveActivity={removeActivity}
@@ -256,6 +266,8 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
               base={base}
               disrupted={disrupted}
               incident={incident}
+              highlightedPlaceId={focusedPlaceId}
+              onFocusPlace={setFocusedPlaceId}
               onChangeIncident={updateIncident}
               onBackToPlan={() => goToStage('plan')}
               onFindRecovery={() => goToStage('recovery')}
@@ -272,6 +284,8 @@ export function MyJourneyPage({ initialStage = 'plan' }: { initialStage?: Journe
               selectedIndex={safeCandidateIdx}
               acceptedOrder={acceptedOrder}
               acceptedRoutes={acceptedRoutes}
+              highlightedPlaceId={focusedPlaceId}
+              onFocusPlace={setFocusedPlaceId}
               onSelectCandidate={setSelectedCandidateIdx}
               onAccept={accept}
               onBackToDisruption={() => goToStage('disruption')}

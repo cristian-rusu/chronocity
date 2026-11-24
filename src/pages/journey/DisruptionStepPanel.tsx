@@ -16,6 +16,8 @@ export function DisruptionStepPanel({
   base,
   disrupted,
   incident,
+  highlightedPlaceId,
+  onFocusPlace,
   onChangeIncident,
   onBackToPlan,
   onFindRecovery,
@@ -24,6 +26,8 @@ export function DisruptionStepPanel({
   base: Result;
   disrupted: Result;
   incident: Incident;
+  highlightedPlaceId: string | null;
+  onFocusPlace: (placeId: string | null) => void;
   onChangeIncident: (incident: Incident) => void;
   onBackToPlan: () => void;
   onFindRecovery: () => void;
@@ -156,19 +160,31 @@ export function DisruptionStepPanel({
 
         {conflicts.length > 0 ? (
           <>
-            {conflicts.map((step, index) => (
-              <div className="impact-item" key={step.activity.id}>
-                <span className="impact-no">{String(index + 1).padStart(2, '0')}</span>
-                <div>
-                  <strong>{step.activity.title}</strong>
-                  <p>{explainConflict(step, incident)}</p>
-                  <small>
-                    Projected {minutesToTime(step.start)}–{minutesToTime(step.finish)} ·{' '}
-                    {step.activity.priority === 'essential' ? 'Essential obligation' : 'Flexible'}
-                  </small>
-                </div>
-              </div>
-            ))}
+            {conflicts.map((step, index) => {
+              const isFocused = highlightedPlaceId === step.activity.place;
+              return (
+                <button
+                  type="button"
+                  className={`impact-item ${styles.interactiveImpact} ${isFocused ? styles.interactiveImpactSelected : ''}`}
+                  key={step.activity.id}
+                  onMouseEnter={() => onFocusPlace(step.activity.place)}
+                  onMouseLeave={() => onFocusPlace(null)}
+                  onFocus={() => onFocusPlace(step.activity.place)}
+                  onBlur={() => onFocusPlace(null)}
+                  onClick={() => onFocusPlace(isFocused ? null : step.activity.place)}
+                >
+                  <span className="impact-no">{String(index + 1).padStart(2, '0')}</span>
+                  <div>
+                    <strong>{step.activity.title}</strong>
+                    <p>{explainConflict(step, incident)}</p>
+                    <small>
+                      Projected {minutesToTime(step.start)}–{minutesToTime(step.finish)} ·{' '}
+                      {step.activity.priority === 'essential' ? 'Essential obligation' : 'Flexible'}
+                    </small>
+                  </div>
+                </button>
+              );
+            })}
             {projectedFollowups.length > 0 && (
               <div className={styles.cascadeNote}>
                 Because an earlier stop breaks, {projectedFollowups.length} later obligation

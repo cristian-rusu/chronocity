@@ -29,6 +29,8 @@ export function PlanStepPanel({
   plan,
   base,
   hasAccepted,
+  highlightedPlaceId,
+  onFocusPlace,
   onUpdatePlan,
   onSaveActivity,
   onRemoveActivity,
@@ -40,6 +42,8 @@ export function PlanStepPanel({
   plan: Plan;
   base: Result;
   hasAccepted: boolean;
+  highlightedPlaceId: string | null;
+  onFocusPlace: (placeId: string | null) => void;
   onUpdatePlan: (plan: Plan) => void;
   onSaveActivity: (activity: Activity) => string;
   onRemoveActivity: (id: string) => void;
@@ -133,12 +137,31 @@ export function PlanStepPanel({
           </div>
         )}
 
+        <p className={styles.mapFocusHint}>
+          Hover or click any obligation to spotlight its stop and route on the map.
+        </p>
+
         <div className="activity-list">
           {plan.activities.length > 0 ? (
             plan.activities.map((activity, index) => {
               const step = base.steps.find((item) => item.activity.id === activity.id);
+              const isFocused = highlightedPlaceId === activity.place;
               return (
-                <div key={activity.id} className="activity">
+                <div
+                  key={activity.id}
+                  className={`activity ${styles.interactiveActivity} ${isFocused ? styles.interactiveActivitySelected : ''}`}
+                  tabIndex={0}
+                  onMouseEnter={() => onFocusPlace(activity.place)}
+                  onMouseLeave={() => onFocusPlace(null)}
+                  onFocus={() => onFocusPlace(activity.place)}
+                  onClick={() => onFocusPlace(isFocused ? null : activity.place)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onFocusPlace(isFocused ? null : activity.place);
+                    }
+                  }}
+                >
                   <div className={`step-number ${step && !step.valid ? 'conflict' : ''}`}>
                     {index + 1}
                   </div>
@@ -170,7 +193,10 @@ export function PlanStepPanel({
                       )}
                     </div>
                   </div>
-                  <div className="activity-actions">
+                  <div
+                    className="activity-actions"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <button
                       type="button"
                       className="icon-btn"

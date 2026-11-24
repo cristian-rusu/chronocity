@@ -22,7 +22,7 @@ export function AcceptedPage() {
   );
   return (
     <>
-      <div className="page-heading">
+      <header className="exec-banner">
         <div>
           <div className="kicker">MY JOURNEY · RECOVERED ITINERARY</div>
           <h1>Your recovered itinerary.</h1>
@@ -31,7 +31,7 @@ export function AcceptedPage() {
         <Link className="btn secondary" to="/my-journey?step=recovery">
           <OriginalIcon name="back" /> Back to My Journey
         </Link>
-      </div>
+      </header>
       {accepted ? (
         <>
           <div className="accepted-banner">

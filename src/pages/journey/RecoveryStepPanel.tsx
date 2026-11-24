@@ -16,6 +16,8 @@ export function RecoveryStepPanel({
   selectedIndex,
   acceptedOrder,
   acceptedRoutes,
+  highlightedPlaceId,
+  onFocusPlace,
   onSelectCandidate,
   onAccept,
   onBackToDisruption,
@@ -29,6 +31,8 @@ export function RecoveryStepPanel({
   selectedIndex: number;
   acceptedOrder: string[] | null;
   acceptedRoutes: string[][] | null | undefined;
+  highlightedPlaceId: string | null;
+  onFocusPlace: (placeId: string | null) => void;
   onSelectCandidate: (index: number) => void;
   onAccept: (order: string[] | null, routes?: string[][] | null) => void;
   onBackToDisruption: () => void;
@@ -197,7 +201,14 @@ export function RecoveryStepPanel({
               </div>
             )}
 
-            <Journey result={chosen} />
+            <p className={styles.mapFocusHint}>
+              Hover or click any recovered stop to highlight its path on the map.
+            </p>
+            <Journey
+              result={chosen}
+              highlightedPlaceId={highlightedPlaceId}
+              onFocusPlace={onFocusPlace}
+            />
 
             {candidates.length > 1 && (
               <>

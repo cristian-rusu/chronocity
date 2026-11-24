@@ -45,7 +45,7 @@ export function CityLabPage() {
 
   return (
     <>
-      <div className="page-heading">
+      <header className="exec-banner">
         <div>
           <div className="kicker">CITY LAB · BROADER VISION</div>
           <h1>What if the city adapts?</h1>
@@ -62,7 +62,7 @@ export function CityLabPage() {
         >
           <OriginalIcon name="download" /> Export scenario
         </button>
-      </div>
+      </header>
 
       <div className="stat-grid">
         <div className="stat">
@@ -99,6 +99,7 @@ export function CityLabPage() {
             incident={incident}
             cityData={network(policy)}
             residentResults={result.rows.flatMap((row) => (row.improved ? [row.improved] : []))}
+            onSelectEdge={(edge) => updateIncident({ ...incident, edge })}
           />
 
           <div className={styles.utilityBar} style={{ marginBlockStart: '0.85rem' }}>
