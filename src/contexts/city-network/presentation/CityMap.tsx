@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type PointerEvent } from 'react';
 import { city as defaultCity } from '../infrastructure/dataset';
 import type { City, Place } from '../public-contracts';
 import type { Result } from '../../temporal-simulation/public-contracts';
@@ -581,6 +581,20 @@ function LocationStatus({ place, incident }: { place: Place; incident: Incident 
   return <>{open ? 'Open at current clock' : 'Closed at current clock'}</>;
 }
 
+const MAP_W = 930;
+const MAP_H = 545;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 2.6;
+
+function clampPan(x: number, y: number, zoom: number) {
+  const vbW = MAP_W / zoom;
+  const vbH = MAP_H / zoom;
+  return {
+    x: Math.max(0, Math.min(MAP_W - vbW, x)),
+    y: Math.max(0, Math.min(MAP_H - vbH, y)),
+  };
+}
+
 export function CityMap({
   result,
   incident = calm,
@@ -614,6 +628,117 @@ export function CityMap({
   const [layer, setLayer] = useState<Layer>(cityData === defaultCity ? 'routes' : 'people');
   const [showLayers, setShowLayers] = useState(false);
 
+  // Vector viewBox zoom & pan state (isolated to CityMap, preserves playback & focus stability)
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStart = useRef<{ dist: number; zoom: number; cx: number; cy: number } | null>(null);
+  const dragOrigin = useRef<{ x: number; y: number; panX: number; panY: number; moved: boolean } | null>(null);
+
+  const zoomTo = (nextZoom: number, focusX?: number, focusY?: number) => {
+    const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Number(nextZoom.toFixed(2))));
+    const oldW = MAP_W / zoom;
+    const oldH = MAP_H / zoom;
+    const newW = MAP_W / clampedZoom;
+    const newH = MAP_H / clampedZoom;
+    const cx = focusX ?? pan.x + oldW / 2;
+    const cy = focusY ?? pan.y + oldH / 2;
+    setZoom(clampedZoom);
+    setPan(clampPan(cx - newW / 2, cy - newH / 2, clampedZoom));
+  };
+
+  const resetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
+    if (hero) return;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pointers.current.size === 2) {
+      const [p1, p2] = [...pointers.current.values()];
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const vbW = MAP_W / zoom;
+      const vbH = MAP_H / zoom;
+      pinchStart.current = {
+        dist: Math.max(1, dist),
+        zoom,
+        cx: pan.x + vbW / 2,
+        cy: pan.y + vbH / 2,
+      };
+      dragOrigin.current = null;
+      setDragging(false);
+    } else if (pointers.current.size === 1 && zoom > 1) {
+      dragOrigin.current = {
+        x: event.clientX,
+        y: event.clientY,
+        panX: pan.x,
+        panY: pan.y,
+        moved: false,
+      };
+    }
+  };
+
+  const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
+    if (hero || !pointers.current.has(event.pointerId)) return;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pointers.current.size === 2 && pinchStart.current) {
+      const [p1, p2] = [...pointers.current.values()];
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const nextZoom = Math.max(
+        MIN_ZOOM,
+        Math.min(MAX_ZOOM, pinchStart.current.zoom * (dist / pinchStart.current.dist)),
+      );
+      const newW = MAP_W / nextZoom;
+      const newH = MAP_H / nextZoom;
+      setZoom(Number(nextZoom.toFixed(2)));
+      setPan(
+        clampPan(
+          pinchStart.current.cx - newW / 2,
+          pinchStart.current.cy - newH / 2,
+          nextZoom,
+        ),
+      );
+      return;
+    }
+
+    if (pointers.current.size === 1 && dragOrigin.current && svgRef.current && zoom > 1) {
+      const dxPx = event.clientX - dragOrigin.current.x;
+      const dyPx = event.clientY - dragOrigin.current.y;
+      if (!dragOrigin.current.moved && Math.hypot(dxPx, dyPx) < 6) return;
+      if (!dragOrigin.current.moved) {
+        dragOrigin.current.moved = true;
+        setDragging(true);
+        svgRef.current.setPointerCapture?.(event.pointerId);
+      }
+      const rect = svgRef.current.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const vbW = MAP_W / zoom;
+      const vbH = MAP_H / zoom;
+      const dxSvg = (dxPx / rect.width) * vbW;
+      const dySvg = (dyPx / rect.height) * vbH;
+      setPan(clampPan(dragOrigin.current.panX - dxSvg, dragOrigin.current.panY - dySvg, zoom));
+    }
+  };
+
+  const handlePointerUp = (event: PointerEvent<SVGSVGElement>) => {
+    if (hero) return;
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinchStart.current = null;
+    if (pointers.current.size === 0) {
+      dragOrigin.current = null;
+      setDragging(false);
+    }
+  };
+
+  const vbW = hero ? MAP_W : MAP_W / zoom;
+  const vbH = hero ? MAP_H : MAP_H / zoom;
+  const clamped = hero ? { x: 0, y: 0 } : clampPan(pan.x, pan.y, zoom);
+
   const availableLayers: Layer[] =
     compactControls && residentResults.length === 0
       ? ['routes', 'access']
@@ -623,6 +748,12 @@ export function CityMap({
     setSelected(next);
     if (onSelectPlace) {
       onSelectPlace(next?.kind === 'place' ? next.id : null);
+    }
+    if (!hero && zoom > 1 && next?.kind === 'place') {
+      const target = city.places.find((item) => item.id === next.id);
+      if (target) {
+        setPan(clampPan(target.x - vbW / 2, target.y - vbH / 2, zoom));
+      }
     }
   };
 
@@ -705,11 +836,61 @@ export function CityMap({
       )}
 
       <div className="map-wrap">
+        {!hero && (
+          <div className="map-zoom-controls" role="group" aria-label="Map zoom controls">
+            <button
+              type="button"
+              className="map-zoom-btn"
+              aria-label="Zoom in map"
+              title="Zoom in"
+              disabled={zoom >= MAX_ZOOM}
+              onClick={() => zoomTo(zoom + 0.4)}
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="map-zoom-level"
+              aria-label={`Current zoom ${Math.round(zoom * 100)} percent. Activate to reset zoom`}
+              title="Reset zoom to 100%"
+              disabled={zoom === 1}
+              onClick={resetView}
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="map-zoom-btn"
+              aria-label="Zoom out map"
+              title="Zoom out"
+              disabled={zoom <= MIN_ZOOM}
+              onClick={() => zoomTo(zoom - 0.4)}
+            >
+              −
+            </button>
+          </div>
+        )}
+
+        {!hero && zoom > 1 && (
+          <div className="map-pan-badge" aria-hidden="true">
+            Drag to pan · Pinch to zoom
+          </div>
+        )}
+
         <svg
-          viewBox="0 0 930 545"
+          ref={svgRef}
+          viewBox={`${clamped.x} ${clamped.y} ${vbW} ${vbH}`}
           role={hero ? 'img' : 'group'}
           aria-label="Illustrated Achrona city with districts, river, services and transport"
-          className={hero ? 'city-map hero-map' : 'city-map'}
+          className={
+            hero
+              ? 'city-map hero-map'
+              : `city-map ${zoom > 1 ? 'city-map-zoomed' : ''} ${dragging ? 'city-map-dragging' : ''}`
+          }
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
         >
           <defs>
             <linearGradient id="terrainGrad" x1="0" y1="0" x2="1" y2="1">
@@ -767,8 +948,8 @@ export function CityMap({
               residents={residentResults}
             />
           )}
-          <g transform="translate(888,24)">
-            <circle cx="8" cy="14" r="16" fill="#fffefa" opacity=".82" />
+          <g transform="translate(884,488)" pointerEvents="none">
+            <circle cx="8" cy="14" r="16" fill="#fffefa" opacity=".84" />
             <path d="M3 22 8 4 13 22 8 17z" fill="#3e5950" />
             <text x="8" y="37" fontSize="9" fontWeight="700" textAnchor="middle" fill="#465f56">
               N
